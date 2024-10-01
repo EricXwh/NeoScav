@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
@@ -16,9 +18,9 @@ public class PlayerController : MonoBehaviour
     public LayerMask blockLayer;   
     public Transform interactionPoint;
 
-     [Header("Push/Pull Parameters")]
-    public float pushForce = 10f;             
-    public float pushSmoothness = 20f;
+    [Header("Push/Pull Parameters")]
+    public float pushForce = 10f;        
+    public float pushSmoothness = 20f;       
 
     private CharacterController controller;
     private Vector3 velocity;
@@ -52,18 +54,18 @@ public class PlayerController : MonoBehaviour
         float moveZ = Input.GetAxis("Vertical");  
 
         Vector3 move = new Vector3(moveX, 0, moveZ).normalized;
-        
+        if(isPushing && currentBlock != null)
+        {
+            float blockHeight = GetBlockHeight(currentBlock);
+            Vector3 desiredPosition = interactionPoint.position + new Vector3(0, 1f + blockHeight / 2f, 0);
+
+            Vector3 start = currentBlock.transform.position;
+            currentBlock.transform.position = Vector3.Lerp(start, desiredPosition, Time.deltaTime * pushSmoothness);
+            currentBlock.transform.rotation = transform.rotation;
+        }        
         if (move.magnitude >= 0.1f)
         {
-            if(isPushing)
-            {
-                if(currentBlock != null)
-                {
-                    Vector3 desiredPosition = interactionPoint.position + new Vector3(0, 1.5f, 0);
-                    currentBlock.transform.position = desiredPosition;
-                    currentBlock.transform.rotation = transform.rotation;
-                } 
-            }
+
             float targetAngle = Mathf.Atan2(move.x, move.z) * Mathf.Rad2Deg;
             Quaternion targetRotation = Quaternion.Euler(0f, targetAngle, 0f);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
@@ -79,30 +81,25 @@ public class PlayerController : MonoBehaviour
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
     }
+
     void HandlePush()
     {
-        if (isPushing)
+        if (Input.GetMouseButtonDown(0))
         {
-            if (Input.GetMouseButton(0))
-            {
-                // 保持推动状态
-            }
-            else
+            if (isPushing)
             {
                 StopPushing();
             }
-            return;
-        }
-
-        if (Input.GetMouseButtonDown(0))
-        {
-
-            if (currentBlock != null)
+            else
             {
-                StartPushing(currentBlock);
+                if (currentBlock != null)
+                {
+                    StartPushing(currentBlock);
+                }
             }
         }
     }
+
     void StartPushing(GameObject block)
     {
         isPushing = true;
@@ -111,27 +108,27 @@ public class PlayerController : MonoBehaviour
         Rigidbody blockRb = currentBlock.GetComponent<Rigidbody>();
         if (blockRb != null)
         {
-            blockRb.isKinematic = true;
+            blockRb.isKinematic  = true;
         }
 
-        Vector3 desiredPosition = interactionPoint.position + new Vector3(0, 1.5f, 0);
+        float blockHeight = GetBlockHeight(currentBlock);
+        Vector3 desiredPosition = interactionPoint.position + new Vector3(0, 1f + blockHeight / 2f, 0);
         currentBlock.transform.position = desiredPosition;
-        currentBlock.transform.rotation = transform.rotation;
     }
 
     void StopPushing()
     {
         isPushing = false;
-        Vector3 desiredPosition = interactionPoint.position + transform.forward * 1.5f + new Vector3(0,1.5f,0);
-        currentBlock.transform.position = desiredPosition;
-
-        // 恢复方块的物理属性
         if (currentBlock != null)
         {
+            float blockWidth = GetBlockWidth(currentBlock);
+            Vector3 desiredPosition = interactionPoint.position + transform.forward * (1f + blockWidth / 2) + new Vector3(0, 1f, 0);
+            currentBlock.transform.position = desiredPosition;
+
             Rigidbody blockRb = currentBlock.GetComponent<Rigidbody>();
             if (blockRb != null)
             {
-                blockRb.isKinematic = false;
+                blockRb.isKinematic  = false;
             }
             currentBlock = null;
         }
@@ -189,6 +186,31 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    
+    float GetBlockHeight(GameObject block)
+    {
+        Collider collider = block.GetComponent<Collider>();
+        if (collider != null)
+        {
+            return collider.bounds.size.y;
+        }
+        else
+        {
+            return 1f;
+        }
+    }
 
+    float GetBlockWidth(GameObject block)
+    {
+        var size = block.GetComponent<MeshFilter>().mesh.bounds.size;
+        if (GetComponent<Collider>() != null)
+        {
+        Vector3 lossyScale = block.transform.lossyScale;
+        float width = size.z * lossyScale.z;
+        return width;
+        }
+        else
+        {
+            return 1f;
+        }
+    }
 }
