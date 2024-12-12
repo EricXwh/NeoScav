@@ -21,7 +21,7 @@ public class RollingBall : MonoBehaviour
         if(collision.gameObject.CompareTag("PressurePlate"))
         {
             isTriggered = true;
-            rb.isKinematic = true;
+            //rb.isKinematic = true;
         }
     }
 

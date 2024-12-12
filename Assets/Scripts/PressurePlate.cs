@@ -23,14 +23,15 @@ public class PressurePlate : MonoBehaviour
         }
     }
 
-    // private void OnCollisionExit(Collision collision)
-    // {
-    //     if (collision.gameObject.CompareTag(targetTag))
-    //     {
-    //         isTriggered = false; 
-    //         UpdateColor();
-    //     }
-    // }
+    private void OnCollisionExit(Collision collision)
+    {
+        if (collision.gameObject.CompareTag(targetTag))
+        {
+            isTriggered = false; 
+            EventManager.Instance?.TriggerPressurePlateReset(linkedDescendingBlock);
+            UpdateColor();
+        }
+    }
 
     void UpdateColor()
     {
