@@ -133,7 +133,7 @@ public class PlayerController : MonoBehaviour
 
     void HandleCarry()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(1))
         {
             if (isCarrying)
             {
@@ -203,17 +203,17 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        if (Input.GetMouseButtonDown(1))
+        if (Input.GetMouseButtonDown(0))
         {
             StartPush();
         }
         
-        if (Input.GetMouseButton(1))
+        if (Input.GetMouseButton(0))
         {
             ContinuePush();
         }
         
-        if (Input.GetMouseButtonUp(1))
+        if (Input.GetMouseButtonUp(0))
         {
             StopPush();
         }

@@ -6,8 +6,9 @@ public class EventManager : MonoBehaviour
     public static EventManager Instance;
 
     // 定义事件
-    public event Action<CircuitBlock> OnCircuitBlockConnected;
-    public event Action<CircuitBlock> OnCircuitBlockDisconnected;
+    public event Action<GameObject> OnCircuitBlockConnected;
+    public event Action<GameObject> OnCircuitBlockDisconnected;
+    public event Action<GameObject> OnPressurePlateMechanism;
 
     private void Awake()
     {
@@ -24,14 +25,19 @@ public class EventManager : MonoBehaviour
     }
 
     // 触发连接事件
-    public void TriggerCircuitBlockConnected(CircuitBlock block)
+    public void TriggerCircuitBlockConnected(GameObject block)
     {
         OnCircuitBlockConnected?.Invoke(block);
     }
 
     // 触发断开连接事件
-    public void TriggerCircuitBlockDisconnected(CircuitBlock block)
+    public void TriggerCircuitBlockDisconnected(GameObject block)
     {
         OnCircuitBlockDisconnected?.Invoke(block);
+    }
+
+    public void TriggerPressurePlateMechanism(GameObject pressurePlate)
+    {
+        OnPressurePlateMechanism?.Invoke(pressurePlate);
     }
 }

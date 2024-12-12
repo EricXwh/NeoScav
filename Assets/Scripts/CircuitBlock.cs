@@ -7,6 +7,8 @@ public class CircuitBlock : MonoBehaviour
     [Header("Line Detection Layers")]
     public LayerMask lineLayer; 
 
+    public GameObject linkedDescendingBlock;
+
     // 使用 HashSet 跟踪当前连接的 Circuit 对象
     private HashSet<GameObject> connectedCircuits = new HashSet<GameObject>();
 
@@ -63,12 +65,12 @@ public class CircuitBlock : MonoBehaviour
         {
             if (isNowConnected)
             {
-                EventManager.Instance?.TriggerCircuitBlockConnected(this);
+                EventManager.Instance?.TriggerCircuitBlockConnected(linkedDescendingBlock);
                 Debug.Log($"{gameObject.name} 已达到连接条件（2个连接）");
             }
             else
             {
-                EventManager.Instance?.TriggerCircuitBlockDisconnected(this);
+                EventManager.Instance?.TriggerCircuitBlockDisconnected(linkedDescendingBlock);
                 Debug.Log($"{gameObject.name} 不再满足连接条件（少于或多于2个连接）");
             }
         }

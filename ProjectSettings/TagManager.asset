@@ -5,6 +5,9 @@ TagManager:
   serializedVersion: 2
   tags:
   - Circuit
+  - PressurePlate
+  - Ball
+  - Block
   layers:
   - Default
   - TransparentFX

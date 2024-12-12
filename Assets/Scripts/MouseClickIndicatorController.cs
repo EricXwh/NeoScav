@@ -6,7 +6,6 @@ public class MouseClickIndicatorController : MonoBehaviour
 {
     public static MouseClickIndicatorController Instance;
 
-    private Animator animator;
     private bool isIndicatorActive = false;
 
     private void Awake()
@@ -18,12 +17,6 @@ public class MouseClickIndicatorController : MonoBehaviour
         else
         {
             Destroy(gameObject);
-        }
-
-        animator = GetComponent<Animator>();
-        if (animator == null)
-        {
-            Debug.LogError("Animator component not found on MouseClickIndicatorBackground.");
         }
     }
 
