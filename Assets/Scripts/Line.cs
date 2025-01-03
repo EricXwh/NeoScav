@@ -16,12 +16,16 @@ public class Line : MonoBehaviour
             Debug.LogError($"{gameObject.name} 的 Line 需要分配 PuzzleManager。");
         }
 
-        // 确保 Collider 是 Trigger
         Collider col = GetComponent<Collider>();
         if (!col.isTrigger)
         {
             col.isTrigger = true;
         }
+    }
+
+    private void Start()
+    {
+        ConnectSiblingLines();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -53,5 +57,37 @@ public class Line : MonoBehaviour
     public IEnumerable<Line> GetConnectedLines()
     {
         return connectedLines;
+    }
+
+    private void ConnectSiblingLines()
+    {
+        if (transform.parent == null)
+        {
+            Debug.LogWarning($"{gameObject.name} 没有父对象，无法连接同父对象下的 Line。");
+            return;
+        }
+
+        foreach (Transform sibling in transform.parent)
+        {
+            if (sibling == transform) continue; 
+
+            Line siblingLine = sibling.GetComponent<Line>();
+            if (siblingLine != null && siblingLine.puzzleManager == this.puzzleManager)
+            {
+                if (connectedLines.Add(siblingLine))
+                {
+                    Debug.Log($"{gameObject.name} 与同父对象的 {siblingLine.gameObject.name} 建立连接.");
+                }
+
+                if (siblingLine.connectedLines.Add(this))
+                {
+                    Debug.Log($"{siblingLine.gameObject.name} 与同父对象的 {gameObject.name} 建立连接.");
+                }
+            }
+        }
+        if (connectedLines.Count > 0)
+        {
+            puzzleManager.UpdateConnections();
+        }
     }
 }
