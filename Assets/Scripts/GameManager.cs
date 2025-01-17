@@ -31,7 +31,6 @@ public class GameManager : MonoBehaviour
     {
         selectedTutorial = (TutorialLevel)level;
         Debug.Log("Selected Tutorial Level: " + selectedTutorial);
-        // 加载主游戏场景
-        SceneManager.LoadScene("MainGame"); // 确保主游戏场景名正确
+        SceneManager.LoadScene("MainGame"); 
     }
 }
