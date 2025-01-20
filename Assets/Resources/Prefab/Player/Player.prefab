@@ -93,7 +93,7 @@ Transform:
   m_GameObject: {fileID: 4075876199622566145}
   serializedVersion: 2
   m_LocalRotation: {x: 0.33452556, y: -0.000000008926568, z: 0.000000003168725, w: 0.9423867}
-  m_LocalPosition: {x: 0, y: 10.82, z: -13.32}
+  m_LocalPosition: {x: 6.96, y: 10.82, z: -57.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -122,7 +122,7 @@ MonoBehaviour:
   m_Follow: {fileID: 3113304290677839492}
   m_Lens:
     FieldOfView: 60
-    OrthographicSize: 6.35
+    OrthographicSize: 10
     NearClipPlane: 0.3
     FarClipPlane: 1000
     Dutch: 0
@@ -167,7 +167,7 @@ Transform:
   m_GameObject: {fileID: 4078708672970446144}
   serializedVersion: 2
   m_LocalRotation: {x: 0.33452556, y: -0.000000008926568, z: 0.0000000031687262, w: 0.9423867}
-  m_LocalPosition: {x: 0, y: 10.82, z: -13.32}
+  m_LocalPosition: {x: 6.96, y: 10.82, z: -57.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -208,7 +208,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 6.35
+  orthographic size: 10
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -320,6 +320,18 @@ PrefabInstance:
       propertyPath: m_Center.y
       value: 0.06
       objectReference: {fileID: 0}
+    - target: {fileID: 3638382092692534648, guid: b8bb300dc93f96448af4b465d545c84c, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 91d917f41ae815c41ab615b3b6b12614, type: 2}
+    - target: {fileID: 4465666426952422137, guid: b8bb300dc93f96448af4b465d545c84c, type: 3}
+      propertyPath: PushSpeed
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4465666426952422137, guid: b8bb300dc93f96448af4b465d545c84c, type: 3}
+      propertyPath: moveSpeed
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 4465666426952422137, guid: b8bb300dc93f96448af4b465d545c84c, type: 3}
       propertyPath: pushSmoothness
       value: 30
@@ -332,9 +344,13 @@ PrefabInstance:
       propertyPath: interactionDistance
       value: 1.5
       objectReference: {fileID: 0}
+    - target: {fileID: 4465666426952422137, guid: b8bb300dc93f96448af4b465d545c84c, type: 3}
+      propertyPath: pushDetectionLayers.m_Bits
+      value: 192
+      objectReference: {fileID: 0}
     - target: {fileID: 4854688603004521824, guid: b8bb300dc93f96448af4b465d545c84c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 6.96
       objectReference: {fileID: 0}
     - target: {fileID: 4854688603004521824, guid: b8bb300dc93f96448af4b465d545c84c, type: 3}
       propertyPath: m_LocalPosition.y
@@ -342,7 +358,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4854688603004521824, guid: b8bb300dc93f96448af4b465d545c84c, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -44.38
       objectReference: {fileID: 0}
     - target: {fileID: 4854688603004521824, guid: b8bb300dc93f96448af4b465d545c84c, type: 3}
       propertyPath: m_LocalRotation.w
@@ -383,6 +399,10 @@ PrefabInstance:
     - target: {fileID: 7800189860642524397, guid: b8bb300dc93f96448af4b465d545c84c, type: 3}
       propertyPath: m_Name
       value: PlayerModel
+      objectReference: {fileID: 0}
+    - target: {fileID: 7800189860642524397, guid: b8bb300dc93f96448af4b465d545c84c, type: 3}
+      propertyPath: m_TagString
+      value: Player
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

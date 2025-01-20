@@ -1,4 +1,4 @@
-using System;  
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -11,7 +11,7 @@ public class PlayerController : MonoBehaviour
     public float rotationSpeed = 10f;           
     public float jumpHeight = 3f;               
     public float gravity = -20f;                
-    public float fallMultiplier = 2.5f;        
+    public float fallMultiplier = 2.5f;         
     public float lowJumpMultiplier = 2f; 
 
     [Header("Interaction Parameters")]
@@ -19,29 +19,26 @@ public class PlayerController : MonoBehaviour
     public LayerMask blockLayer;   
     public Transform interactionPoint;
 
-    [Header("Carry/Push Parameters")]
+    [Header("Carry Parameters")]
     public float CarryForce = 10f;        
-    public float PushSpeed = 5f; 
     public float Smoothness = 20f;    
-    public LayerMask pushDetectionLayers;   
 
     private CharacterController controller;
     private Vector3 velocity;
     private bool isGrounded;
-    private GameObject currentCarryBlock = null;
-    private GameObject currentPushBlock = null;     
+    private GameObject currentCarryBlock = null; 
     private bool isCarrying = false;  
-    private bool isPushing = false;
-    private float CarryBlockWidth;
+    private bool canPlaceBlock = false;
 
-    private Quaternion carryBlockInitialRotation;
+    private Vector3 gizmoCenter;
+    private Vector3 gizmoSize;
+    private Quaternion gizmoRotation;
 
-    private bool isRotating = false;
-    private float carriedRotationY = 0f;        
-    private float targetRotationY = 0f;        
-    public float rotationSpeedDegreesPerSecond = 450f; 
 
-    private Vector3 pushDirection; 
+    private GameObject highlightedBlock = null;
+
+    // 用于保持携带物体与玩家之间的旋转偏移
+    private Quaternion carryRotationOffset;
 
     void Start()
     {
@@ -51,27 +48,30 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         HandleMovement();
-        // HandleJump(); // 跳跃功能保留，如果需要的话可以取消注释
+        // HandleJump(); // 如需跳跃可取消注释
         HandleCarry();
-        HandlePush(); 
-        HandleRotation(); 
         ApplyGravity();
-
-        if (isCarrying && currentCarryBlock != null)
+        if(isCarrying && currentCarryBlock != null)
         {
-            if (carriedRotationY != targetRotationY)
-            {
-                float step = rotationSpeedDegreesPerSecond * Time.deltaTime;
-                carriedRotationY = Mathf.MoveTowards(carriedRotationY, targetRotationY, step);
-            }
+            canPlaceBlock = CheckIfCanPlaceBlock();
         }
     }
 
+    // =========== 1. 移动/旋转 ===========
+    
     void HandleMovement()
     {
-        if(!isCarrying) DetectCarryBlockInFront();
-        // 不再需要在这里检测推送块，因为推送现在在HandlePush中处理
-        // if(!isPushing) DetectPushBlockInFront(); 
+
+        // 如果没在携带，我们就检测一下面前是否有可Carry的方块
+        if(!isCarrying)
+        {
+            DetectCarryBlockInFront();
+        }
+        else
+        {
+            // 如果正在携带，取消对前方可交互方块的高亮
+            HighlightBlock(null);
+        }
 
         isGrounded = controller.isGrounded;
         if (isGrounded && velocity.y < 0)
@@ -79,50 +79,37 @@ public class PlayerController : MonoBehaviour
             velocity.y = -2f; 
         }
 
-        if (isPushing)
-        {
-            return;
-        }
-
-        float moveX = Input.GetAxis("Horizontal"); 
-        float moveZ = Input.GetAxis("Vertical");  
+        float moveX = Input.GetAxisRaw("Horizontal"); 
+        float moveZ = Input.GetAxisRaw("Vertical");  
 
         Vector3 move = new Vector3(moveX, 0, moveZ).normalized;
+
+        // 如果正在携带方块，实时更新方块位置和旋转
         if(isCarrying && currentCarryBlock != null)
         {
             float blockHeight = GetBlockHeight(currentCarryBlock);
             Vector3 desiredPosition = interactionPoint.position + new Vector3(0, 1f + blockHeight / 2f, 0);
 
+            // 平滑移动方块到目标位置
             Vector3 start = currentCarryBlock.transform.position;
             currentCarryBlock.transform.position = Vector3.Lerp(start, desiredPosition, Time.deltaTime * Smoothness);
             
-            Quaternion desiredRotation = transform.rotation * carryBlockInitialRotation * Quaternion.Euler(0f, carriedRotationY, 0f);
-            currentCarryBlock.transform.rotation = desiredRotation;
+            // 保持旋转一致，使用初始旋转偏移
+            currentCarryBlock.transform.rotation = transform.rotation * carryRotationOffset;
         }        
 
+        // 玩家自身的移动和旋转
         if (move.magnitude >= 0.1f)
         {
-            // 移除推动时对方块位置和旋转的控制，因为推动现在通过手动移动实现
-            /*
-            if(isPushing && currentPushBlock != null)
-            {
-                Vector3 desiredPosition = interactionPoint.position + transform.forward * (1f + PushBlockWidth / 2);
-                desiredPosition.y = PushBlockHeight / 2;
-                currentPushBlock.transform.position = desiredPosition;
-                
-                Quaternion desiredRotation = transform.rotation * pushBlockInitialRotation;
-                currentPushBlock.transform.rotation = desiredRotation;
-            }
-            */
-
             float targetAngle = Mathf.Atan2(move.x, move.z) * Mathf.Rad2Deg;
             Quaternion targetRotation = Quaternion.Euler(0f, targetAngle, 0f);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-            Vector3 moveDirection = transform.forward * move.magnitude;
-            controller.Move(moveDirection * moveSpeed * Time.deltaTime);
+            controller.Move(move * moveSpeed * Time.deltaTime);
         }
     }
 
+    // =========== 2. 跳跃 ===========
+    
     void HandleJump()
     {
         if (Input.GetButtonDown("Jump") && isGrounded)
@@ -131,13 +118,16 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // =========== 3. 搬起/放下 ===========
+    
     void HandleCarry()
     {
+        // 右键点击：如果正在携带就放下，如果没携带且有可携带的方块就携带
         if (Input.GetMouseButtonDown(1))
         {
             if (isCarrying)
             {
-                StopCarrying();
+                AttemptStopCarrying();
             }
             else
             {
@@ -153,6 +143,8 @@ public class PlayerController : MonoBehaviour
     {
         isCarrying = true;
         currentCarryBlock = block;
+        // 拿起时，不再高亮
+        HighlightBlock(null);
 
         Rigidbody blockRb = currentCarryBlock.GetComponent<Rigidbody>();
         if (blockRb != null)
@@ -160,17 +152,65 @@ public class PlayerController : MonoBehaviour
             blockRb.isKinematic  = true;
         }
 
-        carryBlockInitialRotation = Quaternion.Inverse(transform.rotation) * currentCarryBlock.transform.rotation;
-
         float blockHeight = GetBlockHeight(currentCarryBlock);
-        CarryBlockWidth = GetBlockWidth(currentCarryBlock);
         Vector3 desiredPosition = interactionPoint.position + new Vector3(0, 1f + blockHeight / 2f, 0);
-        Vector3 start = currentCarryBlock.transform.position;
         currentCarryBlock.transform.position = desiredPosition;
-        //currentCarryBlock.transform.position = Vector3.Lerp(start, desiredPosition, Time.deltaTime * Smoothness);
 
-        carriedRotationY = 0f;
-        targetRotationY = 0f;
+        // 1. 对齐携带物体的一个轴与玩家的朝向
+        AlignCarryBlockWithPlayer();
+
+        // 2. 计算并存储旋转偏移，用于后续保持一致的旋转
+        carryRotationOffset = Quaternion.Inverse(transform.rotation) * currentCarryBlock.transform.rotation;
+    }
+
+    void AlignCarryBlockWithPlayer()
+    {
+        // 获取玩家的前方向
+        Vector3 playerForward = transform.forward;
+
+        // 定义携带物体的四个轴方向
+        Vector3[] carryAxes = new Vector3[]
+        {
+            currentCarryBlock.transform.right,        // X轴
+            currentCarryBlock.transform.forward,      // Z轴
+            -currentCarryBlock.transform.right,       // -X轴
+            -currentCarryBlock.transform.forward      // -Z轴
+        };
+
+        // 找到与玩家前方向夹角最小的轴
+        float smallestAngle = float.MaxValue;
+        Vector3 bestMatchAxis = Vector3.zero;
+
+        foreach (Vector3 axis in carryAxes)
+        {
+            float angle = Vector3.Angle(playerForward, axis);
+            if (angle < smallestAngle)
+            {
+                smallestAngle = angle;
+                bestMatchAxis = axis;
+            }
+        }
+
+        if (bestMatchAxis != Vector3.zero)
+        {
+            // 计算旋转，使得 bestMatchAxis 对齐 playerForward
+            Quaternion alignRotation = Quaternion.FromToRotation(bestMatchAxis, playerForward);
+            currentCarryBlock.transform.rotation = alignRotation * currentCarryBlock.transform.rotation;
+        }
+    }
+
+    /// 执行“放下”逻辑，但只有在能放置的情况下才真正放下。
+    void AttemptStopCarrying()
+    {
+        // 如果可以放置则调用 StopCarrying
+        if (CheckIfCanPlaceBlock())
+        {
+            StopCarrying();
+        }
+        else
+        {
+            Debug.Log("目标位置被阻挡，无法放置方块。");
+        }
     }
 
     void StopCarrying()
@@ -178,164 +218,58 @@ public class PlayerController : MonoBehaviour
         isCarrying = false;
         if (currentCarryBlock != null)
         {
-            float width = GetActualWidth(currentCarryBlock);
-            Vector3 desiredPosition = interactionPoint.position + transform.forward * (1f + width / 2) + new Vector3(0, 1f, 0);
-            //Vector3 desiredPosition = interactionPoint.position + transform.forward * (1f + CarryBlockWidth / 2) + new Vector3(0, 1f, 0);
+            // 计算最终放下的位置
+            float width = GetBlockLength(currentCarryBlock);
+            Vector3 desiredPosition = interactionPoint.position 
+                + transform.forward * (1f + width / 2f) 
+                + new Vector3(0, 1f, 0);
+
             currentCarryBlock.transform.position = desiredPosition;
 
             Rigidbody blockRb = currentCarryBlock.GetComponent<Rigidbody>();
             if (blockRb != null)
             {
-                blockRb.isKinematic  = false;
+                blockRb.isKinematic = false;
             }
             currentCarryBlock = null;
         }
     }
 
-    void HandlePush()
+    /// 检查当前携带的方块能否在“预计放下的位置”放置
+    bool CheckIfCanPlaceBlock()
     {
-        if (isCarrying)
-        {
-            if (isPushing)
-            {
-                StopPush();
-            }
-            return;
-        }
+        float width  = GetBlockWidth(currentCarryBlock);
+        float length = GetBlockLength(currentCarryBlock);
+        float height = GetBlockHeight(currentCarryBlock);
 
-        if (Input.GetMouseButtonDown(0))
-        {
-            StartPush();
-        }
-        
-        if (Input.GetMouseButton(0))
-        {
-            ContinuePush();
-        }
-        
-        if (Input.GetMouseButtonUp(0))
-        {
-            StopPush();
-        }
-    }
+        Vector3 desiredPosition = interactionPoint.position 
+            + transform.forward * (1f + length / 2f) 
+            + new Vector3(0, 1f, 0);
 
-    void StartPush()
-    {
-        if (isPushing) return;
-        
-        Vector3 origin = interactionPoint.position;
-        Vector3 direction = transform.forward;
-        RaycastHit hit;
-        
-        if (Physics.Raycast(origin, direction, out hit, interactionDistance, blockLayer))
+        Vector3 halfExtents = new Vector3(width / 2f, height / 2f, length / 2f);
+
+        gizmoCenter   = desiredPosition;
+        gizmoSize     = new Vector3(width, height, length);
+        gizmoRotation = transform.rotation; 
+
+        Collider[] hits = Physics.OverlapBox(desiredPosition, halfExtents, gizmoRotation);
+
+        List<Collider> validHits = new List<Collider>();
+        foreach (var hit in hits)
         {
-            GameObject block = hit.collider.gameObject;
-            if (block != null)
+            if (hit.gameObject != currentCarryBlock)
             {
-                isPushing = true;
-                currentPushBlock = block;
-                pushDirection = transform.forward; 
+                validHits.Add(hit);
             }
         }
+
+        return validHits.Count == 0;
     }
 
-void ContinuePush()
-{
-    if (!isPushing || currentPushBlock == null)
-        return;
+
+
+    // =========== 4. 重力处理 ===========
     
-    Vector3 moveOffset = pushDirection * PushSpeed * Time.deltaTime;
-    Vector3 newPosition = currentPushBlock.transform.position + moveOffset;
-
-    // 获取方块的碰撞体
-    Collider blockCollider = currentPushBlock.GetComponent<Collider>();
-    if (blockCollider == null)
-    {
-        Debug.LogWarning("当前推送的方块没有碰撞体！");
-        StopPush();
-        return;
-    }
-
-    // 计算BoxCast的尺寸和方向
-    Vector3 boxCastSize = blockCollider.bounds.size / 2;
-    Vector3 castOrigin = currentPushBlock.transform.position;
-
-    // 进行BoxCast检测
-    RaycastHit hit;
-    float castDistance = PushSpeed * Time.deltaTime; 
-
-    bool isObstacle = Physics.BoxCast(
-        castOrigin,
-        boxCastSize,
-        pushDirection,
-        out hit,
-        currentPushBlock.transform.rotation,
-        castDistance,
-        pushDetectionLayers
-    );
-
-    if (isObstacle)
-    {
-        // 检测到障碍物，停止推送
-        StopPush();
-    }
-    else
-    {
-        // 无障碍物，移动方块
-        currentPushBlock.transform.position = newPosition;
-        controller.Move(moveOffset);
-    }
-}
-
-    void StopPush()
-    {
-        if (!isPushing) return;
-        
-        isPushing = false;
-        currentPushBlock = null;
-    }
-
-    void HandleRotation()
-    {
-        if (isCarrying && currentCarryBlock != null && !isRotating)
-        {
-            float scroll = Input.mouseScrollDelta.y;
-
-            if (scroll > 0f)
-            {
-                StartCoroutine(RotateObject(90f));
-            }
-            else if (scroll < 0f)
-            {
-                StartCoroutine(RotateObject(-90f));
-            }
-        }
-    }
-
-    IEnumerator RotateObject(float angle)
-    {
-        isRotating = true;
-        float rotationDuration = Mathf.Abs(angle) / rotationSpeedDegreesPerSecond;
-        float elapsed = 0f;
-        float initialRotationY = targetRotationY;
-        float targetRotationYLocal = targetRotationY + angle;
-
-        while (elapsed < rotationDuration)
-        {
-            carriedRotationY = Mathf.Lerp(initialRotationY, targetRotationYLocal, elapsed / rotationDuration);
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        carriedRotationY = targetRotationYLocal;
-        targetRotationY = targetRotationYLocal;
-        isRotating = false;
-        if (isCarrying && currentCarryBlock != null)
-        {
-            CarryBlockWidth = GetActualWidth(currentCarryBlock);
-        }
-    }
-
     void ApplyGravity()
     {
         if (velocity.y < 0)
@@ -354,6 +288,8 @@ void ContinuePush()
         controller.Move(velocity * Time.deltaTime);
     }
 
+    // =========== 5. 检测可Carry的方块 ===========
+    
     void DetectCarryBlockInFront()
     {
         Vector3 origin = interactionPoint.position;
@@ -362,7 +298,7 @@ void ContinuePush()
 
         if (Physics.Raycast(origin, direction, out hit, interactionDistance, blockLayer))
         {
-            if (hit.collider != null && (!isPushing || currentPushBlock != hit.collider.gameObject))
+            if (hit.collider != null)
             {
                 currentCarryBlock = hit.collider.gameObject;
             }
@@ -374,49 +310,24 @@ void ContinuePush()
         else
         {
             currentCarryBlock = null;
-        }            
-    }
+        }
 
-    /*
-    void DetectPushBlockInFront()
-    {
-        Vector3 origin = interactionPoint.position;
-        Vector3 direction = transform.forward;
-        RaycastHit hit;
-
-        if (Physics.Raycast(origin, direction, out hit, interactionDistance, blockLayer))
+        // 如果“当前可以操作但还没操作”，就高亮，否则不高亮
+        if (!isCarrying)
         {
-            if (hit.collider != null)
-            {
-                currentPushBlock = hit.collider.gameObject;
-            }
-            else
-            {
-                currentPushBlock = null;
-            }
+            HighlightBlock(currentCarryBlock);
         }
         else
         {
-            currentPushBlock = null;
-        }            
+            HighlightBlock(null);
+        }
     }
-    */
 
+    // =========== 6. Debug 可视化 ===========
+    
     private void OnDrawGizmosSelected()
     {
-        if (Application.isPlaying && isPushing && currentPushBlock != null)
-        {
-            Gizmos.color = Color.green;
-            Collider blockCollider = currentPushBlock.GetComponent<Collider>();
-            if (blockCollider != null)
-            {
-                Vector3 boxCastSize = blockCollider.bounds.size / 2;
-                Vector3 castOrigin = currentPushBlock.transform.position;
-                float castDistance = PushSpeed * Time.deltaTime + 0.1f;
-
-                Gizmos.DrawWireCube(castOrigin + pushDirection * castDistance / 2, boxCastSize * 2);
-            }
-        }
+        // 交互射线
         if (Application.isPlaying)
         {
             Gizmos.color = Color.red;
@@ -426,6 +337,25 @@ void ContinuePush()
         }
     }
 
+    private void OnDrawGizmos()
+    {
+        // 如果正在携带，就绘制一个包围盒来表示“如果此时放置，会放在哪里”
+        if (isCarrying && currentCarryBlock != null)
+        {
+            // 根据 canPlaceBlock 来决定颜色
+            Gizmos.color = canPlaceBlock ? Color.green : Color.red;
+
+            // 画一个线框盒子
+            Matrix4x4 oldMatrix = Gizmos.matrix;
+            // 先将 Gizmos 的矩阵切换为盒子所在位置和旋转
+            Gizmos.matrix = Matrix4x4.TRS(gizmoCenter, gizmoRotation, Vector3.one);
+            Gizmos.DrawWireCube(Vector3.zero, gizmoSize);
+            Gizmos.matrix = oldMatrix;
+        }
+    }
+
+    // =========== 7. 获取方块尺寸 ===========
+    
     float GetBlockHeight(GameObject block)
     {
         Collider collider = block.GetComponent<Collider>();
@@ -441,12 +371,77 @@ void ContinuePush()
 
     float GetBlockWidth(GameObject block)
     {
-        var size = block.GetComponent<MeshFilter>().mesh.bounds.size;
-        if (block.GetComponent<Collider>() != null)
+        Vector3 playerRight = transform.right;
+
+        Vector3 localRight = block.transform.InverseTransformDirection(playerRight);
+
+        localRight = new Vector3(Mathf.Abs(localRight.x), Mathf.Abs(localRight.y), Mathf.Abs(localRight.z));
+
+        if (localRight.x > localRight.y && localRight.x > localRight.z)
         {
-            Vector3 lossyScale = block.transform.lossyScale;
-            float width = size.z * lossyScale.z;
-            return width;
+            return block.transform.localScale.x; 
+        }
+        else if (localRight.y > localRight.x && localRight.y > localRight.z)
+        {
+            return block.transform.localScale.y;
+        }
+        else
+        {
+            return block.transform.localScale.z;
+        }
+    }
+
+    float GetBlockLength(GameObject block)
+    {
+        Vector3 playerForward = transform.forward;
+
+        Vector3 localForward = block.transform.InverseTransformDirection(playerForward);
+
+        localForward = new Vector3(Mathf.Abs(localForward.x), Mathf.Abs(localForward.y), Mathf.Abs(localForward.z));
+
+        if (localForward.x > localForward.y && localForward.x > localForward.z)
+        {
+            return block.transform.localScale.x; 
+        }
+        else if (localForward.y > localForward.x && localForward.y > localForward.z)
+        {
+            return block.transform.localScale.y; 
+        }
+        else
+        {
+            return block.transform.localScale.z; 
+        }
+    }
+
+
+
+    float GetActualWidth(GameObject block)
+    {
+        Vector3 characterForward = transform.forward;
+        Vector3 worldXAxis = Vector3.right;
+        float angle = Mathf.Abs(90 - Vector3.Angle(characterForward, worldXAxis));
+
+        Collider collider = block.GetComponent<Collider>();
+        if (collider != null)
+        {
+            float x = collider.bounds.size.x; 
+            float z = collider.bounds.size.z; 
+
+            float radians = angle * Mathf.Deg2Rad;
+
+            float denominator = Mathf.Pow(Mathf.Cos(radians), 2) - Mathf.Pow(Mathf.Sin(radians), 2);
+
+            if (Mathf.Abs(denominator) < 1e-6f) // 防止分母为0
+            {
+                Debug.LogError("Invalid angle causing denominator to be zero.");
+                return 1f; 
+            }
+
+            float length = (x * Mathf.Abs(Mathf.Cos(radians)) - z * Mathf.Abs(Mathf.Sin(radians))) / denominator;
+            float width = (z * Mathf.Abs(Mathf.Cos(radians)) - x * Mathf.Abs(Mathf.Sin(radians))) / denominator;
+
+            Debug.Log("localscale: "+block.transform.localScale.x);
+            return Mathf.Abs(width); 
         }
         else
         {
@@ -454,20 +449,70 @@ void ContinuePush()
         }
     }
 
-    float GetActualWidth(GameObject block)
+    float GetActualLength(GameObject block)
     {
-        float yRotation = Mathf.Round(block.transform.eulerAngles.y / 90f) * 90f;
+        Vector3 characterForward = transform.forward;
+        Vector3 worldXAxis = Vector3.right;
+        float angle = Mathf.Abs(90 - Vector3.Angle(characterForward, worldXAxis));
 
-        if (yRotation % 180 != 0)
+        Collider collider = block.GetComponent<Collider>();
+        if (collider != null)
         {
-            var mesh = block.GetComponent<MeshFilter>().mesh;
-            Vector3 lossyScale = block.transform.lossyScale;
-            float width = mesh.bounds.size.x * lossyScale.x;
-            return width;
+            float x = collider.bounds.size.x; 
+            float z = collider.bounds.size.z; 
+
+            float radians = angle * Mathf.Deg2Rad;
+
+            float denominator = Mathf.Pow(Mathf.Cos(radians), 2) - Mathf.Pow(Mathf.Sin(radians), 2);
+
+            if (Mathf.Abs(denominator) < 1e-6f) // 防止分母为0
+            {
+                Debug.LogError("Invalid angle causing denominator to be zero.");
+                return 1f; 
+            }
+
+            float length = (x * Mathf.Abs(Mathf.Cos(radians)) - z * Mathf.Abs(Mathf.Sin(radians))) / denominator;
+            float width = (z * Mathf.Abs(Mathf.Cos(radians)) - x * Mathf.Abs(Mathf.Sin(radians))) / denominator;
+
+
+            return Mathf.Abs(length); 
         }
         else
         {
-            return GetBlockWidth(block);
+            return 1f;
         }
+    }
+
+    // =========== 8. 高亮管理函数 ===========
+    
+    /// 管理高亮，仅在“可操作但尚未操作”的物体身上启用 Outline。
+    /// 如果之前有其它高亮，先把它关掉；然后把新的目标物体高亮。
+    private void HighlightBlock(GameObject block)
+    {
+        // 如果两次传入相同的 block，就不用重复操作
+        if (highlightedBlock == block) return;
+
+        // 如果之前有高亮的方块，就先把它的 Outline 关掉
+        if (highlightedBlock != null)
+        {
+            Outline oldOutline = highlightedBlock.GetComponent<Outline>();
+            if (oldOutline != null)
+            {
+                oldOutline.enabled = false;
+            }
+        }
+
+        // 如果传进来的 block 不为 null，则给它启用 Outline
+        if (block != null)
+        {
+            Outline newOutline = block.GetComponent<Outline>();
+            if (newOutline != null)
+            {
+                newOutline.enabled = true;
+            }
+        }
+
+        // 更新记录
+        highlightedBlock = block;
     }
 }

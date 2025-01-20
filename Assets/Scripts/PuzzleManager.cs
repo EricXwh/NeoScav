@@ -49,9 +49,7 @@ public class PuzzleManager : MonoBehaviour
         SetLinesColor(disconnectedColor);
     }
 
-    /// <summary>
     /// 当 Line 的连接状态改变时调用。
-    /// </summary>
     public void UpdateConnections()
     {
         // 清除之前的连接记录
@@ -91,9 +89,7 @@ public class PuzzleManager : MonoBehaviour
         }
     }
 
-    /// <summary>
     /// 检查一个 Line 是否通过连接与指定的点相通
-    /// </summary>
     private bool IsConnectedToPoint(Line line, GameObject point)
     {
         // 使用 BFS 来检查是否存在从 line 到 point 的路径
@@ -127,9 +123,7 @@ public class PuzzleManager : MonoBehaviour
         return false;
     }
 
-    /// <summary>
     /// 检查一个 Line 是否与指定的点重叠
-    /// </summary>
     private bool IsOverlappingWithPoint(GameObject line, GameObject point)
     {
         Collider pointCollider = point.GetComponent<Collider>();
@@ -143,9 +137,7 @@ public class PuzzleManager : MonoBehaviour
         return false;
     }
 
-    /// <summary>
     /// 触发关联的机关
-    /// </summary>
     private void TriggerMechanism()
     {
         if (linkedDescendingBlock != null)
@@ -163,9 +155,7 @@ public class PuzzleManager : MonoBehaviour
         }
     }
 
-    /// <summary>
     /// 重置关联的机关
-    /// </summary>
     private void ResetMechanism()
     {
         if (linkedDescendingBlock != null)
@@ -183,10 +173,7 @@ public class PuzzleManager : MonoBehaviour
         }
     }
 
-    /// <summary>
     /// 设置所有 Line 的颜色
-    /// </summary>
-    /// <param name="color">要设置的颜色</param>
     private void SetLinesColor(Color color)
     {
         foreach (Line line in allLines)

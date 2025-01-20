@@ -20,9 +20,7 @@ public class MouseClickIndicatorController : MonoBehaviour
         }
     }
 
-    /// <summary>
     /// 显示鼠标点击标识
-    /// </summary>
     public void ShowIndicator(Vector3 screenPosition)
     {
         if (!isIndicatorActive)
@@ -36,9 +34,7 @@ public class MouseClickIndicatorController : MonoBehaviour
         rectTransform.position = screenPosition;
     }
 
-    /// <summary>
     /// 隐藏鼠标点击标识
-    /// </summary>
     public void HideIndicator()
     {
         if (isIndicatorActive)

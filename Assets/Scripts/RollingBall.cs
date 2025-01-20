@@ -4,14 +4,15 @@ using UnityEngine;
 
 public class RollingBall : MonoBehaviour
 {
-    public Vector3 initialPosition = new Vector3(9.57f, 7.43f, 19.88f);
+    private Vector3 initialPosition;
     public float resetInterval = 6f;
     private Rigidbody rb;
     private bool isTriggered = false;
     // Start is called before the first frame update
     void Start()
     {
-        transform.position = initialPosition;
+        initialPosition = transform.position;
+        // transform.position = initialPosition;
         rb = GetComponent<Rigidbody>();
         StartCoroutine(ResetPositionRoutine());
     }
