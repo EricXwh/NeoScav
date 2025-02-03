@@ -12,22 +12,22 @@ public class PressurePlate : MonoBehaviour
     }
 
 
-    private void OnCollisionEnter(Collision collision)
+    private void OnTriggerEnter(Collider other)
     {
-        if (!isTriggered && collision.gameObject.CompareTag(targetTag))
+        if (!isTriggered && (other.CompareTag(targetTag)||other.CompareTag("Player")))
         {
-            isTriggered = true; // 标记已触发
+            isTriggered = true;
             Debug.Log($"压力板触发: {linkedDescendingBlock.name}");
             EventManager.Instance?.TriggerPressurePlateMechanism(linkedDescendingBlock);
             UpdateColor();
         }
     }
 
-    private void OnCollisionExit(Collision collision)
+    private void OnTriggerExit(Collider other)
     {
-        if (collision.gameObject.CompareTag(targetTag))
+        if (other.CompareTag(targetTag)||other.CompareTag("Player"))
         {
-            isTriggered = false; 
+            isTriggered = false;
             EventManager.Instance?.TriggerPressurePlateReset(linkedDescendingBlock);
             UpdateColor();
         }

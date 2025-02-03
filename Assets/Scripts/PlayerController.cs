@@ -34,10 +34,8 @@ public class PlayerController : MonoBehaviour
     private Vector3 gizmoSize;
     private Quaternion gizmoRotation;
 
-
     private GameObject highlightedBlock = null;
 
-    // 用于保持携带物体与玩家之间的旋转偏移
     private Quaternion carryRotationOffset;
 
     void Start()
@@ -51,19 +49,18 @@ public class PlayerController : MonoBehaviour
         // HandleJump(); // 如需跳跃可取消注释
         HandleCarry();
         ApplyGravity();
-        if(isCarrying && currentCarryBlock != null)
+        if (isCarrying && currentCarryBlock != null)
         {
             canPlaceBlock = CheckIfCanPlaceBlock();
         }
     }
 
     // =========== 1. 移动/旋转 ===========
-    
+
     void HandleMovement()
     {
-
         // 如果没在携带，我们就检测一下面前是否有可Carry的方块
-        if(!isCarrying)
+        if (!isCarrying)
         {
             DetectCarryBlockInFront();
         }
@@ -122,8 +119,7 @@ public class PlayerController : MonoBehaviour
     
     void HandleCarry()
     {
-        // 右键点击：如果正在携带就放下，如果没携带且有可携带的方块就携带
-        if (Input.GetMouseButtonDown(1))
+        if(Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
         {
             if (isCarrying)
             {
@@ -149,7 +145,7 @@ public class PlayerController : MonoBehaviour
         Rigidbody blockRb = currentCarryBlock.GetComponent<Rigidbody>();
         if (blockRb != null)
         {
-            blockRb.isKinematic  = true;
+            blockRb.isKinematic = true;
         }
 
         float blockHeight = GetBlockHeight(currentCarryBlock);
@@ -172,9 +168,9 @@ public class PlayerController : MonoBehaviour
         Vector3[] carryAxes = new Vector3[]
         {
             currentCarryBlock.transform.right,        // X轴
-            currentCarryBlock.transform.forward,      // Z轴
-            -currentCarryBlock.transform.right,       // -X轴
-            -currentCarryBlock.transform.forward      // -Z轴
+            currentCarryBlock.transform.forward,       // Z轴
+            -currentCarryBlock.transform.right,        // -X轴
+            -currentCarryBlock.transform.forward        // -Z轴
         };
 
         // 找到与玩家前方向夹角最小的轴
@@ -265,8 +261,6 @@ public class PlayerController : MonoBehaviour
 
         return validHits.Count == 0;
     }
-
-
 
     // =========== 4. 重力处理 ===========
     
@@ -372,11 +366,8 @@ public class PlayerController : MonoBehaviour
     float GetBlockWidth(GameObject block)
     {
         Vector3 playerRight = transform.right;
-
         Vector3 localRight = block.transform.InverseTransformDirection(playerRight);
-
         localRight = new Vector3(Mathf.Abs(localRight.x), Mathf.Abs(localRight.y), Mathf.Abs(localRight.z));
-
         if (localRight.x > localRight.y && localRight.x > localRight.z)
         {
             return block.transform.localScale.x; 
@@ -394,11 +385,8 @@ public class PlayerController : MonoBehaviour
     float GetBlockLength(GameObject block)
     {
         Vector3 playerForward = transform.forward;
-
         Vector3 localForward = block.transform.InverseTransformDirection(playerForward);
-
         localForward = new Vector3(Mathf.Abs(localForward.x), Mathf.Abs(localForward.y), Mathf.Abs(localForward.z));
-
         if (localForward.x > localForward.y && localForward.x > localForward.z)
         {
             return block.transform.localScale.x; 
@@ -413,34 +401,26 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-
-
     float GetActualWidth(GameObject block)
     {
         Vector3 characterForward = transform.forward;
         Vector3 worldXAxis = Vector3.right;
         float angle = Mathf.Abs(90 - Vector3.Angle(characterForward, worldXAxis));
-
         Collider collider = block.GetComponent<Collider>();
         if (collider != null)
         {
             float x = collider.bounds.size.x; 
             float z = collider.bounds.size.z; 
-
             float radians = angle * Mathf.Deg2Rad;
-
             float denominator = Mathf.Pow(Mathf.Cos(radians), 2) - Mathf.Pow(Mathf.Sin(radians), 2);
-
-            if (Mathf.Abs(denominator) < 1e-6f) // 防止分母为0
+            if (Mathf.Abs(denominator) < 1e-6f)
             {
                 Debug.LogError("Invalid angle causing denominator to be zero.");
                 return 1f; 
             }
-
             float length = (x * Mathf.Abs(Mathf.Cos(radians)) - z * Mathf.Abs(Mathf.Sin(radians))) / denominator;
             float width = (z * Mathf.Abs(Mathf.Cos(radians)) - x * Mathf.Abs(Mathf.Sin(radians))) / denominator;
-
-            Debug.Log("localscale: "+block.transform.localScale.x);
+            Debug.Log("localscale: " + block.transform.localScale.x);
             return Mathf.Abs(width); 
         }
         else
@@ -454,27 +434,20 @@ public class PlayerController : MonoBehaviour
         Vector3 characterForward = transform.forward;
         Vector3 worldXAxis = Vector3.right;
         float angle = Mathf.Abs(90 - Vector3.Angle(characterForward, worldXAxis));
-
         Collider collider = block.GetComponent<Collider>();
         if (collider != null)
         {
             float x = collider.bounds.size.x; 
             float z = collider.bounds.size.z; 
-
             float radians = angle * Mathf.Deg2Rad;
-
             float denominator = Mathf.Pow(Mathf.Cos(radians), 2) - Mathf.Pow(Mathf.Sin(radians), 2);
-
-            if (Mathf.Abs(denominator) < 1e-6f) // 防止分母为0
+            if (Mathf.Abs(denominator) < 1e-6f)
             {
                 Debug.LogError("Invalid angle causing denominator to be zero.");
                 return 1f; 
             }
-
             float length = (x * Mathf.Abs(Mathf.Cos(radians)) - z * Mathf.Abs(Mathf.Sin(radians))) / denominator;
             float width = (z * Mathf.Abs(Mathf.Cos(radians)) - x * Mathf.Abs(Mathf.Sin(radians))) / denominator;
-
-
             return Mathf.Abs(length); 
         }
         else
