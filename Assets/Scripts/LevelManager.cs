@@ -20,7 +20,7 @@ public class LevelManager : MonoBehaviour
     {
         if (playerTransform == null)
         {
-            Debug.LogError("请设置玩家的 Transform！");
+            Debug.LogError("请设置玩家的 Transform");
         }
 
         // 如果没有手动赋值摄像机，则尝试自动查找
