@@ -7,6 +7,7 @@ using UnityEngine;
 public class PlayerController : MonoBehaviour
 {
     [Header("Movement Parameters")]
+    public bool canMove = true;
     public float moveSpeed = 5f;                
     public float rotationSpeed = 10f;           
     public float jumpHeight = 3f;               
@@ -45,6 +46,9 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        if (!canMove)
+            return;
+            
         HandleMovement();
         // HandleJump(); // 如需跳跃可取消注释
         HandleCarry();
@@ -59,14 +63,14 @@ public class PlayerController : MonoBehaviour
 
     void HandleMovement()
     {
-        // 如果没在携带，我们就检测一下面前是否有可Carry的方块
+        // 如果没在携带，则检测前方是否有可搬运的方块
         if (!isCarrying)
         {
             DetectCarryBlockInFront();
         }
         else
         {
-            // 如果正在携带，取消对前方可交互方块的高亮
+            // 如果正在携带，取消对前方可交互物体的高亮
             HighlightBlock(null);
         }
 
@@ -78,11 +82,10 @@ public class PlayerController : MonoBehaviour
 
         float moveX = Input.GetAxisRaw("Horizontal"); 
         float moveZ = Input.GetAxisRaw("Vertical");  
-
         Vector3 move = new Vector3(moveX, 0, moveZ).normalized;
 
-        // 如果正在携带方块，实时更新方块位置和旋转
-        if(isCarrying && currentCarryBlock != null)
+        // 如果正在携带物体，实时更新其位置和旋转
+        if (isCarrying && currentCarryBlock != null)
         {
             float blockHeight = GetBlockHeight(currentCarryBlock);
             Vector3 desiredPosition = interactionPoint.position + new Vector3(0, 1f + blockHeight / 2f, 0);
@@ -106,7 +109,7 @@ public class PlayerController : MonoBehaviour
     }
 
     // =========== 2. 跳跃 ===========
-    
+
     void HandleJump()
     {
         if (Input.GetButtonDown("Jump") && isGrounded)
@@ -116,10 +119,10 @@ public class PlayerController : MonoBehaviour
     }
 
     // =========== 3. 搬起/放下 ===========
-    
+
     void HandleCarry()
     {
-        if(Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
         {
             if (isCarrying)
             {
@@ -139,8 +142,15 @@ public class PlayerController : MonoBehaviour
     {
         isCarrying = true;
         currentCarryBlock = block;
-        // 拿起时，不再高亮
+        // 搬起时取消高亮
         HighlightBlock(null);
+
+        // 如果该方块挂有 CarryBlock 组件，则隐藏其提示
+        CarryBlock carryBlock = block.GetComponent<CarryBlock>();
+        if (carryBlock != null)
+        {
+            carryBlock.HideHint();
+        }
 
         Rigidbody blockRb = currentCarryBlock.GetComponent<Rigidbody>();
         if (blockRb != null)
@@ -152,7 +162,7 @@ public class PlayerController : MonoBehaviour
         Vector3 desiredPosition = interactionPoint.position + new Vector3(0, 1f + blockHeight / 2f, 0);
         currentCarryBlock.transform.position = desiredPosition;
 
-        // 1. 对齐携带物体的一个轴与玩家的朝向
+        // 1. 对齐携带物体的一个轴与玩家朝向
         AlignCarryBlockWithPlayer();
 
         // 2. 计算并存储旋转偏移，用于后续保持一致的旋转
@@ -195,7 +205,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    /// 执行“放下”逻辑，但只有在能放置的情况下才真正放下。
+    /// 执行“放下”逻辑，但只有在能放置的情况下才真正放下
     void AttemptStopCarrying()
     {
         // 如果可以放置则调用 StopCarrying
@@ -263,7 +273,7 @@ public class PlayerController : MonoBehaviour
     }
 
     // =========== 4. 重力处理 ===========
-    
+
     void ApplyGravity()
     {
         if (velocity.y < 0)
@@ -283,22 +293,36 @@ public class PlayerController : MonoBehaviour
     }
 
     // =========== 5. 检测可Carry的方块 ===========
-    
+
     void DetectCarryBlockInFront()
     {
         Vector3 origin = interactionPoint.position;
         Vector3 direction = transform.forward;
         RaycastHit hit;
 
+        // 如果之前检测到的物体有 CarryBlock 组件，则先隐藏其提示
+        if (currentCarryBlock != null)
+        {
+            CarryBlock prevCarryBlock = currentCarryBlock.GetComponent<CarryBlock>();
+            if (prevCarryBlock != null)
+            {
+                prevCarryBlock.HideHint();
+            }
+        }
+
         if (Physics.Raycast(origin, direction, out hit, interactionDistance, blockLayer))
         {
-            if (hit.collider != null)
+            GameObject detectedBlock = hit.collider.gameObject;
+            currentCarryBlock = detectedBlock;
+
+            // 如果当前未携带物体，并且教程模式为 Minimal，检测该物体是否挂有 CarryBlock 组件，若有则显示提示
+            if (!isCarrying && GameManager.Instance.selectedTutorial == TutorialLevel.Minimal)
             {
-                currentCarryBlock = hit.collider.gameObject;
-            }
-            else
-            {
-                currentCarryBlock = null;
+                CarryBlock carryBlock = detectedBlock.GetComponent<CarryBlock>();
+                if (carryBlock != null)
+                {
+                    carryBlock.ShowHint();
+                }
             }
         }
         else
@@ -306,7 +330,7 @@ public class PlayerController : MonoBehaviour
             currentCarryBlock = null;
         }
 
-        // 如果“当前可以操作但还没操作”，就高亮，否则不高亮
+        // 如果“当前可以操作但尚未操作”，则调用高亮函数
         if (!isCarrying)
         {
             HighlightBlock(currentCarryBlock);
@@ -318,7 +342,7 @@ public class PlayerController : MonoBehaviour
     }
 
     // =========== 6. Debug 可视化 ===========
-    
+
     private void OnDrawGizmosSelected()
     {
         // 交互射线
@@ -341,7 +365,6 @@ public class PlayerController : MonoBehaviour
 
             // 画一个线框盒子
             Matrix4x4 oldMatrix = Gizmos.matrix;
-            // 先将 Gizmos 的矩阵切换为盒子所在位置和旋转
             Gizmos.matrix = Matrix4x4.TRS(gizmoCenter, gizmoRotation, Vector3.one);
             Gizmos.DrawWireCube(Vector3.zero, gizmoSize);
             Gizmos.matrix = oldMatrix;
@@ -349,7 +372,7 @@ public class PlayerController : MonoBehaviour
     }
 
     // =========== 7. 获取方块尺寸 ===========
-    
+
     float GetBlockHeight(GameObject block)
     {
         Collider collider = block.GetComponent<Collider>();
@@ -457,15 +480,15 @@ public class PlayerController : MonoBehaviour
     }
 
     // =========== 8. 高亮管理函数 ===========
-    
-    /// 管理高亮，仅在“可操作但尚未操作”的物体身上启用 Outline。
-    /// 如果之前有其它高亮，先把它关掉；然后把新的目标物体高亮。
+
+    /// 管理高亮，仅在“可操作但尚未操作”的物体上启用 Outline。
+    /// 如果之前有其它高亮，先关闭，然后给新目标启用 Outline。
     private void HighlightBlock(GameObject block)
     {
-        // 如果两次传入相同的 block，就不用重复操作
+        // 如果两次传入相同的物体，则不重复操作
         if (highlightedBlock == block) return;
 
-        // 如果之前有高亮的方块，就先把它的 Outline 关掉
+        // 如果之前有高亮的物体，则先关闭其 Outline
         if (highlightedBlock != null)
         {
             Outline oldOutline = highlightedBlock.GetComponent<Outline>();
@@ -475,7 +498,7 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        // 如果传进来的 block 不为 null，则给它启用 Outline
+        // 如果传入的物体不为 null，则启用其 Outline
         if (block != null)
         {
             Outline newOutline = block.GetComponent<Outline>();
@@ -485,7 +508,6 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        // 更新记录
         highlightedBlock = block;
     }
 }

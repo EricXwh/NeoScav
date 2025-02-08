@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Cinemachine;
@@ -16,6 +17,9 @@ public class LevelManager : MonoBehaviour
 
     public CinemachineBrain cinemachineBrain;
 
+    // 引用新机制介绍的弹窗组件
+    public FullTutorial tutorialPopup;
+
     private void Awake()
     {
         if (playerTransform == null)
@@ -23,7 +27,6 @@ public class LevelManager : MonoBehaviour
             Debug.LogError("请设置玩家的 Transform");
         }
 
-        // 如果没有手动赋值摄像机，则尝试自动查找
         if (cinemachineBrain == null)
         {
             Camera mainCam = Camera.main;
@@ -33,7 +36,7 @@ public class LevelManager : MonoBehaviour
             }
         }
 
-        // 为每个关卡容器缓存生成点引用
+        // 为每个关卡缓存生成点引用
         foreach (GameObject level in levels)
         {
             if (level == null)
@@ -51,17 +54,45 @@ public class LevelManager : MonoBehaviour
         }
     }
 
-    private void Start()
+    private IEnumerator Start()
     {
+        
         // 初始时只激活第一个关卡，其余关卡禁用
         for (int i = 0; i < levels.Length; i++)
         {
             levels[i].SetActive(i == currentLevelIndex);
         }
+
+        yield return null;
+
+        // 检查第一个关卡是否需要显示新机制介绍弹窗
+        GameObject firstLevel = levels[currentLevelIndex];
+        LevelData levelData = firstLevel.GetComponent<LevelData>();
+        if (GameManager.Instance.selectedTutorial == TutorialLevel.Full &&
+            levelData != null &&
+            levelData.introducesNewMechanism)
+        {
+            if (tutorialPopup != null)
+            {
+                // 显示弹窗并传入该关卡的说明文本
+                tutorialPopup.ShowPopup(levelData.mechanismTutorialMessage);
+                
+                // 等待玩家点击关闭按钮
+                while (!tutorialPopup.IsClosed)
+                {
+                    yield return null;
+                }
+            }
+        }
     }
 
-    /// 切换到下一关，并将玩家移动到下一关的生成点位置，同时强制刷新摄像机状态。
+    /// 外部调用 NextLevel() 触发关卡切换
     public void NextLevel()
+    {
+        StartCoroutine(NextLevelCoroutine());
+    }
+
+    private IEnumerator NextLevelCoroutine()
     {
         // 禁用当前关卡
         if (currentLevelIndex < levels.Length)
@@ -81,7 +112,7 @@ public class LevelManager : MonoBehaviour
             {
                 if (playerTransform != null)
                 {
-                    // 在传送前，记录玩家原来的位置
+                    // 记录玩家原来的位置
                     Vector3 oldPos = playerTransform.position;
 
                     CharacterController controller = playerTransform.GetComponent<CharacterController>();
@@ -116,11 +147,30 @@ public class LevelManager : MonoBehaviour
             {
                 Debug.LogWarning("下一关没有找到生成点！");
             }
+
+            // 检查是否需要显示新机制介绍弹窗
+            LevelData levelData = nextLevel.GetComponent<LevelData>();
+            if (GameManager.Instance.selectedTutorial == TutorialLevel.Full &&
+                levelData != null &&
+                levelData.introducesNewMechanism)
+            {
+                if (tutorialPopup != null)
+                {
+                    tutorialPopup.ShowPopup(levelData.mechanismTutorialMessage);
+
+                    // 等待直到玩家点击关闭按钮
+                    while (!tutorialPopup.IsClosed)
+                    {
+                        yield return null;
+                    }
+                    
+                }
+            }
         }
         else
         {
             Debug.Log("所有关卡完成！");
-            // 在这里可以添加结算逻辑或返回主菜单等处理
+            // 此处可添加游戏结束、返回主菜单等逻辑
         }
     }
 }
