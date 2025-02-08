@@ -2,9 +2,21 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Cinemachine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI; 
+using TMPro;
 
 public class LevelManager : MonoBehaviour
 {
+    // 使用静态变量保存当前关卡索引
+    public static int savedLevelIndex = 0;
+    // 静态数组保存每一关的统计数据
+    private static LevelStatistics[] levelStats;
+
+    private static float[] levelAccumulatedTimes;
+
+    private static bool[] tutorialPopupShown;
+
     [Header("所有关卡的容器（按关卡顺序排列）")]
     public GameObject[] levels;
 
@@ -17,11 +29,49 @@ public class LevelManager : MonoBehaviour
 
     public CinemachineBrain cinemachineBrain;
 
-    // 引用新机制介绍的弹窗组件
     public FullTutorial tutorialPopup;
+
+    // 当前关卡的开始时间（本次运行）
+    private float levelStartTime;
+
+    public GameObject summaryCanvas;
+    public TextMeshProUGUI summaryText;
+
+    private bool isResetting = false;
 
     private void Awake()
     {
+        // 恢复当前关卡索引
+        currentLevelIndex = savedLevelIndex;
+
+        // 如果统计数据数组为空，则根据关卡数量初始化
+        if (levelStats == null || levelStats.Length != levels.Length)
+        {
+            levelStats = new LevelStatistics[levels.Length];
+            for (int i = 0; i < levels.Length; i++)
+            {
+                levelStats[i] = new LevelStatistics();
+            }
+        }
+
+        if (levelAccumulatedTimes == null || levelAccumulatedTimes.Length != levels.Length)
+        {
+            levelAccumulatedTimes = new float[levels.Length];
+            for (int i = 0; i < levels.Length; i++)
+            {
+                levelAccumulatedTimes[i] = 0f;
+            }
+        }
+
+        if (tutorialPopupShown == null || tutorialPopupShown.Length != levels.Length)
+        {
+            tutorialPopupShown = new bool[levels.Length];
+            for (int i = 0; i < levels.Length; i++)
+            {
+                tutorialPopupShown[i] = false;
+            }
+        }
+
         if (playerTransform == null)
         {
             Debug.LogError("请设置玩家的 Transform");
@@ -36,7 +86,7 @@ public class LevelManager : MonoBehaviour
             }
         }
 
-        // 为每个关卡缓存生成点引用
+        // 缓存每个关卡的生成点
         foreach (GameObject level in levels)
         {
             if (level == null)
@@ -56,34 +106,78 @@ public class LevelManager : MonoBehaviour
 
     private IEnumerator Start()
     {
-        
-        // 初始时只激活第一个关卡，其余关卡禁用
+        // 仅激活当前关卡，其他关卡禁用
         for (int i = 0; i < levels.Length; i++)
         {
             levels[i].SetActive(i == currentLevelIndex);
         }
 
+        // 重新设置玩家位置为当前关卡的生成点
+        GameObject currentLevel = levels[currentLevelIndex];
+        if (levelSpawnPoints.TryGetValue(currentLevel, out Transform spawnPoint))
+        {
+            CharacterController controller = playerTransform.GetComponent<CharacterController>();
+            if (controller != null)
+            {
+                controller.enabled = false;
+                playerTransform.position = spawnPoint.position;
+                controller.enabled = true;
+            }
+            else
+            {
+                playerTransform.position = spawnPoint.position;
+            }
+        }
+        else
+        {
+            Debug.LogWarning("当前关卡未找到生成点！");
+        }
+
+        levelStartTime = Time.time - levelAccumulatedTimes[currentLevelIndex];
+
         yield return null;
 
-        // 检查第一个关卡是否需要显示新机制介绍弹窗
-        GameObject firstLevel = levels[currentLevelIndex];
-        LevelData levelData = firstLevel.GetComponent<LevelData>();
+        // 如果是 Full Tutorial 模式且当前关卡需要显示说明，则显示弹窗
+        LevelData levelData = currentLevel.GetComponent<LevelData>();
         if (GameManager.Instance.selectedTutorial == TutorialLevel.Full &&
             levelData != null &&
-            levelData.introducesNewMechanism)
+            levelData.introducesNewMechanism &&
+            !tutorialPopupShown[currentLevelIndex])
         {
             if (tutorialPopup != null)
             {
-                // 显示弹窗并传入该关卡的说明文本
                 tutorialPopup.ShowPopup(levelData.mechanismTutorialMessage);
-                
-                // 等待玩家点击关闭按钮
                 while (!tutorialPopup.IsClosed)
                 {
                     yield return null;
                 }
+                tutorialPopupShown[currentLevelIndex] = true;
             }
         }
+    }
+
+    private void Update()
+    {        
+        if (Input.GetKeyDown(KeyCode.R) && currentLevelIndex < levels.Length)
+        {
+            ResetCurrentLevel();
+        }
+
+        if (playerTransform.position.y < -10 && currentLevelIndex < levels.Length && !isResetting)
+        {
+            isResetting = true;
+            ResetCurrentLevel();
+        }
+    }
+
+
+    /// 复原当前关卡：按 R 键时，记录重置次数，然后重载当前 Scene
+    public void ResetCurrentLevel()
+    {
+        // 增加当前关卡的重置次数
+        levelStats[currentLevelIndex].resetCount++;
+        // 重新加载整个 Scene
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     /// 外部调用 NextLevel() 触发关卡切换
@@ -100,10 +194,18 @@ public class LevelManager : MonoBehaviour
             levels[currentLevelIndex].SetActive(false);
         }
 
+        // 在切换关卡前，将当前关卡的用时记录下来
+        if (currentLevelIndex < levels.Length)
+        {
+            levelStats[currentLevelIndex].finalTime = Time.time - levelStartTime;
+        }
+
         currentLevelIndex++;
+        savedLevelIndex = currentLevelIndex;
 
         if (currentLevelIndex < levels.Length)
         {
+            levelAccumulatedTimes[currentLevelIndex] = 0f;
             GameObject nextLevel = levels[currentLevelIndex];
             nextLevel.SetActive(true);
             Debug.Log("切换到关卡：" + (currentLevelIndex + 1));
@@ -112,13 +214,10 @@ public class LevelManager : MonoBehaviour
             {
                 if (playerTransform != null)
                 {
-                    // 记录玩家原来的位置
                     Vector3 oldPos = playerTransform.position;
-
                     CharacterController controller = playerTransform.GetComponent<CharacterController>();
                     if (controller != null)
                     {
-                        // 临时禁用 CharacterController，以便直接设置位置
                         controller.enabled = false;
                         playerTransform.position = spawnPoint.position;
                         controller.enabled = true;
@@ -128,10 +227,7 @@ public class LevelManager : MonoBehaviour
                         playerTransform.position = spawnPoint.position;
                     }
 
-                    // 计算玩家瞬移的偏移量
                     Vector3 delta = spawnPoint.position - oldPos;
-
-                    // 立即刷新虚拟摄像机的状态，使摄像机瞬间对齐玩家
                     CinemachineVirtualCamera vcam = cinemachineBrain.ActiveVirtualCamera as CinemachineVirtualCamera;
                     if (vcam != null)
                     {
@@ -148,6 +244,9 @@ public class LevelManager : MonoBehaviour
                 Debug.LogWarning("下一关没有找到生成点！");
             }
 
+            // 重置本次关卡计时
+            levelStartTime = Time.time;
+
             // 检查是否需要显示新机制介绍弹窗
             LevelData levelData = nextLevel.GetComponent<LevelData>();
             if (GameManager.Instance.selectedTutorial == TutorialLevel.Full &&
@@ -157,20 +256,58 @@ public class LevelManager : MonoBehaviour
                 if (tutorialPopup != null)
                 {
                     tutorialPopup.ShowPopup(levelData.mechanismTutorialMessage);
-
-                    // 等待直到玩家点击关闭按钮
                     while (!tutorialPopup.IsClosed)
                     {
                         yield return null;
                     }
-                    
                 }
             }
         }
         else
         {
             Debug.Log("所有关卡完成！");
-            // 此处可添加游戏结束、返回主菜单等逻辑
+            // 通关后显示每一关的统计数据
+            ShowSummary();
+            Time.timeScale = 0;
         }
     }
+
+    /// 通关后调用，显示每一关的重置次数和用时
+    private void ShowSummary()
+    {
+        // 示例：将所有关卡数据打印到控制台，你也可以在 UI 面板中显示
+        string summary = "Game Summary:\n";
+        for (int i = 0; i < levelStats.Length; i++)
+        {
+            summary += string.Format("Level {0}: Reset Count {1} , Time {2:F2} s\n",
+                i + 1,
+                levelStats[i].resetCount,
+                levelStats[i].finalTime);
+        }
+        Debug.Log(summary);
+
+        if (summaryCanvas != null)
+        {
+            summaryCanvas.SetActive(true);
+            if (summaryText != null)
+            {
+                summaryText.text = summary;
+            }
+        }
+    }
+
+    public void ExitGame()
+    {
+    #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+    #else
+        Application.Quit();
+    #endif
+    }
+}
+
+[System.Serializable]
+public class LevelStatistics {
+    public int resetCount = 0;
+    public float finalTime = 0f;
 }
