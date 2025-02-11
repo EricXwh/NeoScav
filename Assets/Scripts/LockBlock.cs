@@ -1,52 +1,60 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class LockBlock : MonoBehaviour
+public class LockBlock : MechanismBase
 {
-    public DescendingBlock linkedDescendingBlock;
-    private Renderer blockRenderer;
+    public int requiredPressurePlateCount = 1;
 
-    private void Awake()
+    public MechanismBase[] linkedMechanisms;
+
+    // 当前来自 PressurePlate 的激活计数
+    private int activePlateCount = 0;
+    // 标记当前是否处于最终激活状态
+    private bool isActivated = false;
+
+    public override void TriggerActivate()
     {
-        blockRenderer = GetComponent<Renderer>();
-        if (blockRenderer == null)
+        activePlateCount++;
+        CheckActivation();
+    }
+
+    public override void TriggerDeactivate()
+    {
+        activePlateCount = Mathf.Max(0, activePlateCount - 1);
+        CheckActivation();
+    }
+
+    private void CheckActivation()
+    {
+        // 当计数达到或超过设定值且当前未激活时
+        if (!isActivated && activePlateCount >= requiredPressurePlateCount)
         {
-            Debug.LogError($"{gameObject.name} 上没有找到 Renderer 组件！");
+            isActivated = true;
+            UpdatePlateColor(isActivated);
+            // 遍历所有关联机关并调用它们的 TriggerActivate()
+            foreach (var mech in linkedMechanisms)
+            {
+                mech.TriggerActivate();
+            }
+        }
+        // 当计数低于设定值且当前已经激活时，执行复位操作
+        else if (isActivated && activePlateCount < requiredPressurePlateCount)
+        {
+            isActivated = false;
+            UpdatePlateColor(isActivated);
+            // 遍历所有关联机关并调用它们的 TriggerDeactivate()
+            foreach (var mech in linkedMechanisms)
+            {
+                mech.TriggerDeactivate();
+            }
         }
     }
 
-    public void TriggerDescend()
+    private void UpdatePlateColor(bool activated)
     {
-        if (linkedDescendingBlock != null)
+        Renderer renderer = GetComponent<Renderer>();
+        if (renderer != null)
         {
-            linkedDescendingBlock.TriggerDescend();
-            
-            if (blockRenderer != null)
-            {
-                blockRenderer.material.color = Color.green;
-            }
-        }
-        else
-        {
-            Debug.LogWarning($"{gameObject.name} 没有关联下降机关！");
-        }
-    }
-
-    public void TriggerRise()
-    {
-        if (linkedDescendingBlock != null)
-        {
-            linkedDescendingBlock.TriggerRise();
-            
-            if (blockRenderer != null)
-            {
-                blockRenderer.material.color = Color.red;
-            }
-        }
-        else
-        {
-            Debug.LogWarning($"{gameObject.name} 没有关联下降机关！");
+            renderer.material.color = activated ? Color.green : Color.red;
         }
     }
 }

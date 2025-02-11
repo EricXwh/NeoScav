@@ -366,7 +366,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b672e90256f15e4d8c14717bd112286, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  linkedTriggerObject: {fileID: 288024680593323286}
   descendDistance: 4
   descendDuration: 2
   riseDistance: 4

@@ -314,9 +314,8 @@ public class PlayerController : MonoBehaviour
         {
             GameObject detectedBlock = hit.collider.gameObject;
             currentCarryBlock = detectedBlock;
-
             // 如果当前未携带物体，并且教程模式为 Minimal，检测该物体是否挂有 CarryBlock 组件，若有则显示提示
-            if (!isCarrying && GameManager.Instance.selectedTutorial == TutorialLevel.Minimal)
+            if (!isCarrying && GameManager.Instance != null && GameManager.Instance.selectedTutorial == TutorialLevel.Minimal)
             {
                 CarryBlock carryBlock = detectedBlock.GetComponent<CarryBlock>();
                 if (carryBlock != null)
