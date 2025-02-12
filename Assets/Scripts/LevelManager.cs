@@ -5,6 +5,9 @@ using Cinemachine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI; 
 using TMPro;
+using System.IO;
+using System.Text;
+using System;
 
 public class LevelManager : MonoBehaviour
 {
@@ -275,7 +278,6 @@ public class LevelManager : MonoBehaviour
     /// 通关后调用，显示每一关的重置次数和用时
     private void ShowSummary()
     {
-        // 示例：将所有关卡数据打印到控制台，你也可以在 UI 面板中显示
         string summary = "Game Summary:\n";
         for (int i = 0; i < levelStats.Length; i++)
         {
@@ -294,6 +296,34 @@ public class LevelManager : MonoBehaviour
                 summaryText.text = summary;
             }
         }
+    }
+
+    public void generateCSVFile()
+    {
+        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        string filePath = Path.Combine(Application.persistentDataPath, "summary_"+ timestamp+".csv");
+        StringBuilder csvContent = new StringBuilder();
+        csvContent.AppendLine("TutorialLevel, Level, ResetCount, Time");
+        string tutorialLevel = GameManager.Instance.selectedTutorial.ToString();
+
+        for(int i = 0; i < levelStats.Length; i++)
+        {
+            csvContent.AppendLine(string.Format("{0},{1},{2},{3:F2}", 
+                tutorialLevel, 
+                i + 1, 
+                levelStats[i].resetCount,
+                levelStats[i].finalTime));
+        }
+        try
+        {
+            File.WriteAllText(filePath, csvContent.ToString());
+            Debug.Log("Export csv file to: " + filePath);
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError("Error writing CSV file: " + e.Message);
+        }
+        ExitGame();
     }
 
     public void ExitGame()
