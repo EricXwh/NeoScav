@@ -39,6 +39,8 @@ public class PlayerController : MonoBehaviour
 
     private Quaternion carryRotationOffset;
 
+    private MonoBehaviour currentPlatform;
+
     void Start()
     {
         controller = GetComponent<CharacterController>();
@@ -80,6 +82,8 @@ public class PlayerController : MonoBehaviour
             velocity.y = -2f; 
         }
 
+        UpdateCurrentPlatform();
+
         float moveX = Input.GetAxisRaw("Horizontal"); 
         float moveZ = Input.GetAxisRaw("Vertical");  
         Vector3 move = new Vector3(moveX, 0, moveZ).normalized;
@@ -104,10 +108,52 @@ public class PlayerController : MonoBehaviour
             float targetAngle = Mathf.Atan2(move.x, move.z) * Mathf.Rad2Deg;
             Quaternion targetRotation = Quaternion.Euler(0f, targetAngle, 0f);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-            controller.Move(move * moveSpeed * Time.deltaTime);
+            //controller.Move(move * moveSpeed * Time.deltaTime);
         }
+
+        Vector3 platformOffset = Vector3.zero;
+        if (isGrounded && currentPlatform != null)
+        {
+            MovingPlatform mp = currentPlatform as MovingPlatform;
+            if (mp != null)
+            {
+                platformOffset = mp.CurrentVelocity * Time.deltaTime;
+            }
+            else
+            {
+                DescendingBlock db = currentPlatform as DescendingBlock;
+                if (db != null)
+                {
+                    platformOffset = db.CurrentVelocity * Time.deltaTime;
+                }
+            }
+        }
+
+        // 玩家输入移动 + 平台的运动偏移
+        controller.Move(move * moveSpeed * Time.deltaTime + platformOffset);
     }
 
+    void UpdateCurrentPlatform()
+    {
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, Vector3.down, out hit, 1.2f))
+        {
+             DescendingBlock db = hit.collider.GetComponentInParent<DescendingBlock>();
+            if (db != null)
+            {
+                currentPlatform = db;
+                return;
+            }
+
+            MovingPlatform mp = hit.collider.GetComponentInParent<MovingPlatform>();
+            if (mp != null)
+            {
+                currentPlatform = mp;
+                return;
+            }
+        }
+        currentPlatform = null;
+    }
     // =========== 2. 跳跃 ===========
 
     void HandleJump()

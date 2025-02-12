@@ -10,31 +10,42 @@ public class PressurePlate : MonoBehaviour
     [Tooltip("拖入需要响应触发的机关组件")]
     public MechanismBase[] linkedMechanisms;
 
-    private bool isActivated = false;
+    // 记录当前在触发区域内符合条件的物体数量
+    private int activatorCount = 0;
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!isActivated && CheckTriggerCondition(other))
+        if (CheckTriggerCondition(other))
         {
-            isActivated = true;
-            foreach (var mechanism in linkedMechanisms)
+            activatorCount++;
+            if (activatorCount == 1)
             {
-                mechanism.TriggerActivate();
+                foreach (var mechanism in linkedMechanisms)
+                {
+                    mechanism.TriggerActivate();
+                }
+                UpdatePlateColor(true);
             }
-            UpdatePlateColor(true);
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (isActivated && CheckTriggerCondition(other))
+        if (CheckTriggerCondition(other))
         {
-            isActivated = false;
-            foreach (var mechanism in linkedMechanisms)
+            activatorCount--;
+            if (activatorCount < 0)
+                activatorCount = 0;
+
+            // 当所有触发物体都离开时才复位
+            if (activatorCount == 0)
             {
-                mechanism.TriggerDeactivate();
+                foreach (var mechanism in linkedMechanisms)
+                {
+                    mechanism.TriggerDeactivate();
+                }
+                UpdatePlateColor(false);
             }
-            UpdatePlateColor(false);
         }
     }
 

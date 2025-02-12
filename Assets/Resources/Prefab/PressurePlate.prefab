@@ -101,12 +101,12 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 0.93349147, z: 1}
-  m_Center: {x: 0, y: -0.03325401, z: 0}
+  m_Size: {x: 1, y: 1.8997978, z: 1}
+  m_Center: {x: 0, y: 0.4498989, z: 0}
 --- !u!114 &388136586425774430
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -119,8 +119,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e830acce828a13419fa33658c703b2a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  linkedDescendingBlock: {fileID: 0}
-  targetTag: Ball
+  triggeringTags: []
+  linkedMechanisms: []
 --- !u!54 &4335206854660215073
 Rigidbody:
   m_ObjectHideFlags: 0

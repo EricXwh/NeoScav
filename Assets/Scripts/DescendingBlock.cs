@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
+[RequireComponent(typeof(Rigidbody))]
 public class DescendingBlock : MechanismBase
 {
     [Header("下降参数")]
@@ -19,17 +20,35 @@ public class DescendingBlock : MechanismBase
     private Coroutine loopCoroutine;
     private Coroutine currentMovementCoroutine;
 
+    public Vector3 CurrentVelocity { get; private set; }
+    private Vector3 lastPosition;
+
+    private Rigidbody rb;
+
+    private void Awake()
+    {
+        rb = GetComponent<Rigidbody>();
+        rb.isKinematic = true;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+    }
+
     private void Start()
     {
         initialPosition = transform.position;
         targetDescendPosition = initialPosition - new Vector3(0, descendDistance, 0);
+        lastPosition = transform.position;
+    }
+
+    private void FixedUpdate()
+    {
+        CurrentVelocity = (transform.position - lastPosition) / Time.fixedDeltaTime;
+        lastPosition = transform.position;
     }
 
     public override void TriggerActivate()
     {
         if (loop)
         {
-            // 循环模式：启动循环运动协程
             if (loopCoroutine != null)
             {
                 StopCoroutine(loopCoroutine);
@@ -46,7 +65,6 @@ public class DescendingBlock : MechanismBase
     {
         if (loop)
         {
-            // 循环模式下，立即停止所有运动
             if (loopCoroutine != null)
             {
                 StopCoroutine(loopCoroutine);
@@ -86,26 +104,25 @@ public class DescendingBlock : MechanismBase
     {
         while (true)
         {
-            // 下降阶段
             currentMovementCoroutine = StartCoroutine(MoveToPosition(targetDescendPosition, descendSpeed));
             yield return currentMovementCoroutine;
             currentMovementCoroutine = null;
 
-            // 上升阶段
             currentMovementCoroutine = StartCoroutine(MoveToPosition(initialPosition, descendSpeed));
             yield return currentMovementCoroutine;
             currentMovementCoroutine = null;
         }
     }
 
-    /// 按照设定速度将物体移动到目标位置
+    /// 利用 Rigidbody.MovePosition 实现物理移动
     private IEnumerator MoveToPosition(Vector3 targetPos, float speed)
     {
         while (Vector3.Distance(transform.position, targetPos) > 0.001f)
         {
-            transform.position = Vector3.MoveTowards(transform.position, targetPos, speed * Time.deltaTime);
-            yield return null;
+            Vector3 newPosition = Vector3.MoveTowards(transform.position, targetPos, speed * Time.fixedDeltaTime);
+            rb.MovePosition(newPosition);
+            yield return new WaitForFixedUpdate();
         }
-        transform.position = targetPos;
+        rb.MovePosition(targetPos);
     }
 }
