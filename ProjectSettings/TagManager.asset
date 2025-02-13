@@ -8,6 +8,8 @@ TagManager:
   - PressurePlate
   - Ball
   - Block
+  - Battery
+  - Gate
   layers:
   - Default
   - TransparentFX

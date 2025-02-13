@@ -2,88 +2,81 @@ using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
-public class DescendingBlock : MonoBehaviour
+[RequireComponent(typeof(Rigidbody))]
+public class DescendingBlock : MechanismBase
 {
-    [Header("关联的 Trigger 对象")]
-    public GameObject linkedTriggerObject;
-
     [Header("下降参数")]
-    public float descendDistance = 2f;      // 下降的距离
-    public float descendDuration = 2f;      // 下降所需的时间
+    public float descendDistance = 2f;
+    public float descendSpeed = 1f;  // 单位：米/秒
 
-    [Header("上升参数")]
-    public float riseDistance = 2f;         // 上升的距离
-    public float riseDuration = 2f;         // 上升所需的时间
+    [Header("循环选项")]
+    [Tooltip("勾选后触发会持续循环降落和上升，取消触发时会立即停止运动")]
+    public bool loop = false;
 
     private Vector3 initialPosition;
     private Vector3 targetDescendPosition;
-    private Vector3 targetRisePosition;
+
     private Coroutine movementCoroutine;
+    private Coroutine loopCoroutine;
+    private Coroutine currentMovementCoroutine;
+
+    public Vector3 CurrentVelocity { get; private set; }
+    private Vector3 lastPosition;
+
+    private Rigidbody rb;
+
+    private void Awake()
+    {
+        rb = GetComponent<Rigidbody>();
+        rb.isKinematic = true;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
+    }
 
     private void Start()
     {
-        // 记录初始位置和目标位置
         initialPosition = transform.position;
         targetDescendPosition = initialPosition - new Vector3(0, descendDistance, 0);
-        targetRisePosition = initialPosition + new Vector3(0, riseDistance, 0);
-        // 订阅 PuzzleCompleted 和 PuzzleReset 事件
-        if (EventManager.Instance != null)
+        lastPosition = transform.position;
+    }
+
+    private void FixedUpdate()
+    {
+        CurrentVelocity = (transform.position - lastPosition) / Time.fixedDeltaTime;
+        lastPosition = transform.position;
+    }
+
+    public override void TriggerActivate()
+    {
+        if (loop)
         {
-            EventManager.Instance.PuzzleCompleted += HandlePuzzleCompleted;
-            EventManager.Instance.PuzzleReset += HandlePuzzleReset;
-            EventManager.Instance.PressurePlateMechanism += HandlePressurePlateMechanism;
-            EventManager.Instance.PressurePlateReset += HandlePressurePlateReset;
+            if (loopCoroutine != null)
+            {
+                StopCoroutine(loopCoroutine);
+            }
+            loopCoroutine = StartCoroutine(LoopMovementCoroutine());
         }
         else
         {
-            Debug.LogWarning($"{gameObject.name}: 未找到 EventManager 实例。");
-        }
-    }
-
-
-
-    private void OnDisable()
-    {
-        // 取消订阅所有事件
-        if (EventManager.Instance != null)
-        {
-            EventManager.Instance.PuzzleCompleted -= HandlePuzzleCompleted;
-            EventManager.Instance.PuzzleReset -= HandlePuzzleReset;
-            EventManager.Instance.PressurePlateMechanism -= HandlePressurePlateMechanism;
-            EventManager.Instance.PressurePlateReset -= HandlePressurePlateReset;
-        }
-    }
-
-    /// 处理 PuzzleCompleted 事件。
-    private void HandlePuzzleCompleted(GameObject linkedMechanism)
-    {
-        if (linkedMechanism == gameObject)
-        {
             TriggerDescend();
         }
     }
 
-    /// 处理 PuzzleReset 事件。
-    private void HandlePuzzleReset(GameObject linkedMechanism)
+    public override void TriggerDeactivate()
     {
-        if (linkedMechanism == gameObject)
+        if (loop)
         {
-            TriggerRise();
+            if (loopCoroutine != null)
+            {
+                StopCoroutine(loopCoroutine);
+                loopCoroutine = null;
+            }
+            if (currentMovementCoroutine != null)
+            {
+                StopCoroutine(currentMovementCoroutine);
+                currentMovementCoroutine = null;
+            }
         }
-    }
-
-    /// 处理 PressurePlateMechanism 事件。
-    private void HandlePressurePlateMechanism(GameObject pressurePlate)
-    {
-        if (pressurePlate == linkedTriggerObject)
-        {
-            TriggerDescend();
-        }
-    }
-
-    private void HandlePressurePlateReset(GameObject pressurePlate)
-    {
-        if (pressurePlate == linkedTriggerObject)
+        else
         {
             TriggerRise();
         }
@@ -91,49 +84,45 @@ public class DescendingBlock : MonoBehaviour
 
     public void TriggerDescend()
     {
-        StartMovementCoroutine(targetDescendPosition, descendDuration);
-    }
-    
-    public void TriggerRise()
-    {
-        StartMovementCoroutine(initialPosition, riseDuration);
+        if (movementCoroutine != null)
+        {
+            StopCoroutine(movementCoroutine);
+        }
+        movementCoroutine = StartCoroutine(MoveToPosition(targetDescendPosition, descendSpeed));
     }
 
-    /// 开始移动协程到指定位置
-    private void StartMovementCoroutine(Vector3 targetPos, float duration)
+    public void TriggerRise()
     {
         if (movementCoroutine != null)
         {
             StopCoroutine(movementCoroutine);
         }
-
-        movementCoroutine = StartCoroutine(MoveToPosition(targetPos, duration));
+        movementCoroutine = StartCoroutine(MoveToPosition(initialPosition, descendSpeed));
     }
 
-    /// 协程，逐渐移动到目标位置
-    private IEnumerator MoveToPosition(Vector3 targetPos, float duration)
+    private IEnumerator LoopMovementCoroutine()
     {
-        Vector3 startPos = transform.position;
-        float elapsed = 0f;
-
-        while (elapsed < duration)
+        while (true)
         {
-            transform.position = Vector3.Lerp(startPos, targetPos, elapsed / duration);
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
+            currentMovementCoroutine = StartCoroutine(MoveToPosition(targetDescendPosition, descendSpeed));
+            yield return currentMovementCoroutine;
+            currentMovementCoroutine = null;
 
-        transform.position = targetPos;
-        movementCoroutine = null;
+            currentMovementCoroutine = StartCoroutine(MoveToPosition(initialPosition, descendSpeed));
+            yield return currentMovementCoroutine;
+            currentMovementCoroutine = null;
+        }
     }
 
-    private void OnDrawGizmosSelected()
+    /// 利用 Rigidbody.MovePosition 实现物理移动
+    private IEnumerator MoveToPosition(Vector3 targetPos, float speed)
     {
-        Gizmos.color = Color.blue;
-        Gizmos.DrawSphere(initialPosition, 0.1f);
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawSphere(targetDescendPosition, 0.1f);
-        Gizmos.color = Color.green;
-        Gizmos.DrawLine(initialPosition, targetDescendPosition);
+        while (Vector3.Distance(transform.position, targetPos) > 0.001f)
+        {
+            Vector3 newPosition = Vector3.MoveTowards(transform.position, targetPos, speed * Time.fixedDeltaTime);
+            rb.MovePosition(newPosition);
+            yield return new WaitForFixedUpdate();
+        }
+        rb.MovePosition(targetPos);
     }
 }
