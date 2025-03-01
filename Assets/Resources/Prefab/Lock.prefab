@@ -119,6 +119,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   onMaterial: {fileID: 2100000, guid: 39035f38d0a02e24d85c5dd9a92bffff, type: 2}
-  offMaterial: {fileID: 2100000, guid: 7e085d0b27f727244bb6b4e8518568bd, type: 2}
+  offMaterial: {fileID: 2100000, guid: dfba9251b5f53ca49960c4a9870a50b8, type: 2}
   requiredPressurePlateCount: 1
   linkedMechanisms: []

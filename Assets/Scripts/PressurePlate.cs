@@ -67,7 +67,7 @@ public class PressurePlate : MonoBehaviour
         Renderer renderer = GetComponent<Renderer>();
         if (renderer != null)
         {
-            renderer.material.color = activated ? Color.green : Color.red;
+            renderer.material.color = activated ? Color.green : Color.yellow;
         }
     }
 }

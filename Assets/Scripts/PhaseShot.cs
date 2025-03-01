@@ -1,13 +1,15 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PhaseShot : MonoBehaviour
 {
-    public float speed = 2f; 
+    public float speed = 2f;
     public float life = 3f;
+    [Tooltip("激活 LockBlock 后保持激活的时长（秒）")]
+    public float activationDuration = 1f; 
+
     private Rigidbody rb;
-    
+
     void Awake()
     {
         Destroy(gameObject, life);
@@ -21,10 +23,25 @@ public class PhaseShot : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
+        // if(other.CompareTag("Player"))
+        // {
+        //     Destroy(gameObject);
+        // }
+
+        LockBlock lockBlock = other.GetComponent<LockBlock>();
+        if (lockBlock != null)
         {
-            Debug.Log("hit");
+            lockBlock.TriggerActivate();
+            
+            lockBlock.StartCoroutine(DelayedDeactivate(lockBlock, activationDuration));
         }
+
         Destroy(gameObject);
+    }
+
+    IEnumerator DelayedDeactivate(LockBlock lockBlock, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        lockBlock.TriggerDeactivate();
     }
 }

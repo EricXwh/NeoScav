@@ -58,6 +58,11 @@ public class MovingPlatform : MechanismBase
         if (waypoints == null || waypoints.Length == 0)
             yield break;
 
+        if (Vector3.Distance(transform.position, waypoints[currentIndex].position) < 0.01f)
+        {
+            currentIndex = (currentIndex + 1) % waypoints.Length;
+        }
+
         while (isActive)
         {
             Transform target = waypoints[currentIndex];
@@ -67,23 +72,19 @@ public class MovingPlatform : MechanismBase
                 yield return null;
             }
             yield return new WaitForSeconds(waitTime);
-            currentIndex = (currentIndex + 1) % waypoints.Length;
+            if (Vector3.Distance(transform.position, target.position) < 0.01f)
+                currentIndex = (currentIndex + 1) % waypoints.Length;
         }
     }
 
+
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Battery"))
-        {
-            collision.transform.parent = transform;
-        }
+        collision.transform.parent = transform;
     }
 
     private void OnCollisionExit(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Battery"))
-        {
-            collision.transform.parent = null;
-        }
+        collision.transform.parent = null;
     }
 }

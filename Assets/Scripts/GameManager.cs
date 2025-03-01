@@ -1,18 +1,18 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-public enum TutorialLevel
+public enum CollectibleState
 {
-    None,
-    Minimal,
-    Full
+    None,       // 无收集物
+    HasCollectible  // 有收集物
 }
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
-    public TutorialLevel selectedTutorial = TutorialLevel.None;
+    public CollectibleState selectedCollectible = CollectibleState.None;
+    public int collectedCount = 0;
 
     private void Awake()
     {
@@ -27,10 +27,10 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void SetTutorialLevel(int level)
+    public void SetCollectibleOption(int option)
     {
-        selectedTutorial = (TutorialLevel)level;
-        Debug.Log("Selected Tutorial Level: " + selectedTutorial);
-        SceneManager.LoadScene("MainGame"); 
+        selectedCollectible = (CollectibleState)option;
+        Debug.Log("Selected Collectible Option: " + selectedCollectible);
+        SceneManager.LoadScene("MainGame");
     }
 }
