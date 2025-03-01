@@ -9,7 +9,7 @@ public class HintTrigger : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         // 检查是否为玩家，并且当前教程模式为 Minimal
-        if (other.CompareTag("Player") && GameManager.Instance.selectedTutorial == TutorialLevel.Minimal)
+        if (other.CompareTag("Player"))
         {
             hintCanvasController?.ShowHint();
         }
@@ -18,7 +18,7 @@ public class HintTrigger : MonoBehaviour
     private void OnTriggerExit(Collider other)
     {
         // 玩家离开区域后隐藏提示
-        if (other.CompareTag("Player") && GameManager.Instance.selectedTutorial == TutorialLevel.Minimal)
+        if (other.CompareTag("Player"))
         {
             hintCanvasController?.HideHint();
         }

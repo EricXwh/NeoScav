@@ -11,6 +11,7 @@ using System;
 
 public class LevelManager : MonoBehaviour
 {
+    public static LevelManager Instance { get; private set; }
     // 使用静态变量保存当前关卡索引
     public static int savedLevelIndex = 0;
     // 静态数组保存每一关的统计数据
@@ -44,6 +45,12 @@ public class LevelManager : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
         // 恢复当前关卡索引
         currentLevelIndex = savedLevelIndex;
 
@@ -142,8 +149,7 @@ public class LevelManager : MonoBehaviour
 
         // 如果是 Full Tutorial 模式且当前关卡需要显示说明，则显示弹窗
         LevelData levelData = currentLevel.GetComponent<LevelData>();
-        if (GameManager.Instance.selectedTutorial == TutorialLevel.Full &&
-            levelData != null &&
+        if (levelData != null &&
             levelData.introducesNewMechanism &&
             !tutorialPopupShown[currentLevelIndex])
         {
@@ -252,8 +258,7 @@ public class LevelManager : MonoBehaviour
 
             // 检查是否需要显示新机制介绍弹窗
             LevelData levelData = nextLevel.GetComponent<LevelData>();
-            if (GameManager.Instance.selectedTutorial == TutorialLevel.Full &&
-                levelData != null &&
+            if (levelData != null &&
                 levelData.introducesNewMechanism)
             {
                 if (tutorialPopup != null)
@@ -286,6 +291,10 @@ public class LevelManager : MonoBehaviour
                 levelStats[i].resetCount,
                 levelStats[i].finalTime);
         }
+        if (GameManager.Instance != null && GameManager.Instance.selectedCollectible == CollectibleState.HasCollectible)
+        {
+            summary += "\nCollectible Count: " + GameManager.Instance.collectedCount;
+        }
         Debug.Log(summary);
 
         if (summaryCanvas != null)
@@ -303,13 +312,11 @@ public class LevelManager : MonoBehaviour
         string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
         string filePath = Path.Combine(Application.persistentDataPath, "summary_"+ timestamp+".csv");
         StringBuilder csvContent = new StringBuilder();
-        csvContent.AppendLine("TutorialLevel, Level, ResetCount, Time");
-        string tutorialLevel = GameManager.Instance.selectedTutorial.ToString();
+        csvContent.AppendLine("Level, ResetCount, Time");
 
         for(int i = 0; i < levelStats.Length; i++)
         {
-            csvContent.AppendLine(string.Format("{0},{1},{2},{3:F2}", 
-                tutorialLevel, 
+            csvContent.AppendLine(string.Format("{0},{1},{2:F2}", 
                 i + 1, 
                 levelStats[i].resetCount,
                 levelStats[i].finalTime));

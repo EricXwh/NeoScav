@@ -41,6 +41,9 @@ public class PlayerController : MonoBehaviour
 
     private MonoBehaviour currentPlatform;
 
+    private Vector3 carryBounceVelocity;
+    private int originalBlockLayer;
+
     void Start()
     {
         controller = GetComponent<CharacterController>();
@@ -50,11 +53,12 @@ public class PlayerController : MonoBehaviour
     {
         if (!canMove)
             return;
-            
-        HandleMovement();
-        // HandleJump(); // 如需跳跃可取消注释
-        HandleCarry();
         ApplyGravity();
+        HandleCarry();    
+        //HandleJump(); // 如需跳跃可取消注释
+        HandleMovement();
+        
+        
         if (isCarrying && currentCarryBlock != null)
         {
             canPlaceBlock = CheckIfCanPlaceBlock();
@@ -93,10 +97,18 @@ public class PlayerController : MonoBehaviour
         {
             float blockHeight = GetBlockHeight(currentCarryBlock);
             Vector3 desiredPosition = interactionPoint.position + new Vector3(0, 1f + blockHeight / 2f, 0);
-
-            // 平滑移动方块到目标位置
-            Vector3 start = currentCarryBlock.transform.position;
-            currentCarryBlock.transform.position = Vector3.Lerp(start, desiredPosition, Time.deltaTime * Smoothness);
+            if (controller.isGrounded)
+            {
+                carryBounceVelocity = Vector3.zero;
+                currentCarryBlock.transform.position = Vector3.Lerp(currentCarryBlock.transform.position, desiredPosition, Time.deltaTime * Smoothness);
+            }
+            else
+            {
+                currentCarryBlock.transform.position = Vector3.Lerp(currentCarryBlock.transform.position, desiredPosition, Time.deltaTime * Smoothness) 
+                                                        + carryBounceVelocity * Time.deltaTime;
+                carryBounceVelocity = Vector3.Lerp(carryBounceVelocity, Vector3.zero, 0.1f * Time.deltaTime);
+            }
+            //currentCarryBlock.transform.position = Vector3.Lerp(start, desiredPosition, Time.deltaTime * Smoothness);
             
             // 保持旋转一致，使用初始旋转偏移
             currentCarryBlock.transform.rotation = transform.rotation * carryRotationOffset;
@@ -164,6 +176,15 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    public void Bounce(Vector3 direction, float force)
+    {
+        velocity = direction * force * Mathf.Sqrt(lowJumpMultiplier);
+        if (isCarrying && currentCarryBlock != null)
+        {
+            carryBounceVelocity = velocity;
+        }
+    }
+
     // =========== 3. 搬起/放下 ===========
 
     void HandleCarry()
@@ -197,7 +218,7 @@ public class PlayerController : MonoBehaviour
         {
             carryBlock.HideHint();
         }
-
+        
         Rigidbody blockRb = currentCarryBlock.GetComponent<Rigidbody>();
         if (blockRb != null)
         {
@@ -207,12 +228,15 @@ public class PlayerController : MonoBehaviour
         float blockHeight = GetBlockHeight(currentCarryBlock);
         Vector3 desiredPosition = interactionPoint.position + new Vector3(0, 1f + blockHeight / 2f, 0);
         currentCarryBlock.transform.position = desiredPosition;
-
-        // 1. 对齐携带物体的一个轴与玩家朝向
+        originalBlockLayer = block.layer;
+        block.layer = LayerMask.NameToLayer("CarriedBlock");
+        // 对齐携带物体的一个轴与玩家朝向
         AlignCarryBlockWithPlayer();
 
-        // 2. 计算并存储旋转偏移，用于后续保持一致的旋转
+        // 计算并存储旋转偏移，用于后续保持一致的旋转
         carryRotationOffset = Quaternion.Inverse(transform.rotation) * currentCarryBlock.transform.rotation;
+        controller.height += 1.5f;
+        controller.center += new Vector3(0, 0.75f, 0);
     }
 
     void AlignCarryBlockWithPlayer()
@@ -254,6 +278,11 @@ public class PlayerController : MonoBehaviour
     /// 执行“放下”逻辑，但只有在能放置的情况下才真正放下
     void AttemptStopCarrying()
     {
+        // if (!controller.isGrounded)
+        // {
+        //     Debug.Log("玩家在空中，无法放下方块");
+        //     return;
+        // }
         // 如果可以放置则调用 StopCarrying
         if (CheckIfCanPlaceBlock())
         {
@@ -270,20 +299,32 @@ public class PlayerController : MonoBehaviour
         isCarrying = false;
         if (currentCarryBlock != null)
         {
-            // 计算最终放下的位置
             float width = GetBlockLength(currentCarryBlock);
-            Vector3 desiredPosition = interactionPoint.position 
-                + transform.forward * (1f + width / 2f) 
-                + new Vector3(0, 1f, 0);
+            Vector3 desiredPosition;
 
-            currentCarryBlock.transform.position = desiredPosition;
+            if (controller.isGrounded)
+            {
+                // 在地面时，使用 interactionPoint 位置，在前方放置方块
+                desiredPosition = interactionPoint.position 
+                    + transform.forward * (1f + width / 2f) 
+                    + new Vector3(0, 1f, 0);
+            currentCarryBlock.transform.position = desiredPosition;        
+            }
 
             Rigidbody blockRb = currentCarryBlock.GetComponent<Rigidbody>();
             if (blockRb != null)
             {
                 blockRb.isKinematic = false;
             }
+            // Collider[] colliders = currentCarryBlock.GetComponents<Collider>();
+            // foreach (Collider col in colliders)
+            // {
+            //     col.enabled = true;
+            // }
+            currentCarryBlock.layer = originalBlockLayer;
             currentCarryBlock = null;
+            controller.height -= 1.5f;
+            controller.center -= new Vector3(0, 0.75f, 0);
         }
     }
 
@@ -334,8 +375,12 @@ public class PlayerController : MonoBehaviour
         {
             velocity.y += gravity * Time.deltaTime;
         }
-
+        
         controller.Move(velocity * Time.deltaTime);
+        if (controller.isGrounded)
+        {
+            velocity = new Vector3(0, velocity.y, 0);
+        }
     }
 
     // =========== 5. 检测可Carry的方块 ===========
@@ -343,39 +388,30 @@ public class PlayerController : MonoBehaviour
     void DetectCarryBlockInFront()
     {
         Vector3 origin = interactionPoint.position;
-        Vector3 direction = transform.forward;
-        RaycastHit hit;
+        // 在 interactionDistance 半径内查找所有符合 blockLayer 的碰撞体
+        Collider[] colliders = Physics.OverlapSphere(origin, interactionDistance, blockLayer);
+        GameObject closestBlock = null;
+        float closestDistance = Mathf.Infinity;
 
-        // 如果之前检测到的物体有 CarryBlock 组件，则先隐藏其提示
-        if (currentCarryBlock != null)
+        foreach (Collider col in colliders)
         {
-            CarryBlock prevCarryBlock = currentCarryBlock.GetComponent<CarryBlock>();
-            if (prevCarryBlock != null)
+            // 计算从交互点到该方块的方向
+            Vector3 directionToBlock = col.transform.position - origin;
+            // 筛选出玩家前方45°以内的
+            float angle = Vector3.Angle(transform.forward, directionToBlock);
+            if (angle <= 45f)
             {
-                prevCarryBlock.HideHint();
-            }
-        }
-
-        if (Physics.Raycast(origin, direction, out hit, interactionDistance, blockLayer))
-        {
-            GameObject detectedBlock = hit.collider.gameObject;
-            currentCarryBlock = detectedBlock;
-            // 如果当前未携带物体，并且教程模式为 Minimal，检测该物体是否挂有 CarryBlock 组件，若有则显示提示
-            if (!isCarrying && GameManager.Instance != null && GameManager.Instance.selectedTutorial == TutorialLevel.Minimal)
-            {
-                CarryBlock carryBlock = detectedBlock.GetComponent<CarryBlock>();
-                if (carryBlock != null)
+                float distance = directionToBlock.magnitude;
+                if (distance < closestDistance)
                 {
-                    carryBlock.ShowHint();
+                    closestDistance = distance;
+                    closestBlock = col.gameObject;
                 }
             }
         }
-        else
-        {
-            currentCarryBlock = null;
-        }
-
-        // 如果“当前可以操作但尚未操作”，则调用高亮函数
+        
+        currentCarryBlock = closestBlock;
+        
         if (!isCarrying)
         {
             HighlightBlock(currentCarryBlock);

@@ -10,6 +10,7 @@ TagManager:
   - Block
   - Battery
   - Gate
+  - BulletSpawner
   layers:
   - Default
   - TransparentFX
@@ -21,8 +22,8 @@ TagManager:
   - Block
   - Ground
   - Circuit
-  - 
-  - 
+  - Player
+  - CarriedBlock
   - 
   - 
   - 
