@@ -10,6 +10,7 @@ TagManager:
   - Block
   - Battery
   - Gate
+  - BulletSpawner
   layers:
   - Default
   - TransparentFX

@@ -123,6 +123,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isCollectibe: 1
+  animationDuration: 0.5
+  targetScaleMultiplier: 1.5
+  collectSound: {fileID: 8300000, guid: e0be4c3f648ee634093a26d8676527b1, type: 3}
+  soundVolumeScale: 1
 --- !u!65 &2303749218655750921
 BoxCollider:
   m_ObjectHideFlags: 0

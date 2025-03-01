@@ -97,6 +97,7 @@ GameObject:
   - component: {fileID: 5409130540739199606}
   - component: {fileID: 8268903464150812080}
   - component: {fileID: 6876905672841001566}
+  - component: {fileID: 5033579031871162917}
   m_Layer: 7
   m_Name: Cannon
   m_TagString: Untagged
@@ -234,6 +235,24 @@ MonoBehaviour:
   phaseShotPrefab: {fileID: 8224835685448516463, guid: 85475bd390dfa404cb1ef482efae47b8, type: 3}
   fireInterval: 4
   firePoint: {fileID: 3678819883673787268}
+--- !u!114 &5033579031871162917
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2645216041055880142}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fea29bb7c508c244a1f805a5fd3fc4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  outlineMode: 1
+  outlineColor: {r: 0.98880523, g: 1, b: 0.3820755, a: 1}
+  outlineWidth: 3.5
+  precomputeOutline: 0
+  bakeKeys: []
+  bakeValues: []
 --- !u!1 &7925749764323955151
 GameObject:
   m_ObjectHideFlags: 0

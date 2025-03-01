@@ -1,6 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
+[RequireComponent(typeof(AudioSource))]
 public class PressurePlate : MonoBehaviour
 {
     [Header("触发条件设置")]
@@ -10,8 +11,17 @@ public class PressurePlate : MonoBehaviour
     [Tooltip("拖入需要响应触发的机关组件")]
     public MechanismBase[] linkedMechanisms;
 
-    // 记录当前在触发区域内符合条件的物体数量
+    [Header("音效设置")]
+    public AudioClip plateSound;
+    public float soundVolume = 1f;
+
     private int activatorCount = 0;
+    private AudioSource audioSource;
+
+    private void Awake()
+    {
+        audioSource = GetComponent<AudioSource>();
+    }
 
     private void OnTriggerEnter(Collider other)
     {
@@ -25,6 +35,10 @@ public class PressurePlate : MonoBehaviour
                     mechanism.TriggerActivate();
                 }
                 UpdatePlateColor(true);
+                if (plateSound != null)
+                {
+                    audioSource.PlayOneShot(plateSound, soundVolume);
+                }
             }
         }
     }
@@ -37,7 +51,6 @@ public class PressurePlate : MonoBehaviour
             if (activatorCount < 0)
                 activatorCount = 0;
 
-            // 当所有触发物体都离开时才复位
             if (activatorCount == 0)
             {
                 foreach (var mechanism in linkedMechanisms)
@@ -45,6 +58,10 @@ public class PressurePlate : MonoBehaviour
                     mechanism.TriggerDeactivate();
                 }
                 UpdatePlateColor(false);
+                if (plateSound != null)
+                {
+                    audioSource.PlayOneShot(plateSound, soundVolume);
+                }
             }
         }
     }

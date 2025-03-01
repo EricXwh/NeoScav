@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 6973454649436407195}
   - component: {fileID: 2217867107598514970}
   - component: {fileID: 7421153429986288160}
+  - component: {fileID: 6271674449087752129}
   m_Layer: 7
   m_Name: Battery
   m_TagString: Untagged
@@ -150,3 +151,21 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0
+--- !u!114 &6271674449087752129
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9047738495672736836}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fea29bb7c508c244a1f805a5fd3fc4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  outlineMode: 1
+  outlineColor: {r: 1, g: 0.98688215, b: 0.504717, a: 1}
+  outlineWidth: 3.5
+  precomputeOutline: 0
+  bakeKeys: []
+  bakeValues: []

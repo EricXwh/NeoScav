@@ -119,3 +119,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   bounceForce: 20
+  bounceSound: {fileID: 8300000, guid: 05f0e05a3c524ed41a6bec7798bbaf85, type: 3}

@@ -6,10 +6,13 @@ public class Collectible : MonoBehaviour
     public bool isCollectibe = false; 
     public float animationDuration = 0.5f;      
     public float targetScaleMultiplier = 1.5f;  
+    public AudioClip collectSound;
+    public float soundVolumeScale = 1f;
 
     private MeshRenderer meshRenderer;
     private Vector3 initialScale;
     private Color initialColor;
+    private AudioSource audioSource;
 
     void Start()
     {
@@ -24,6 +27,11 @@ public class Collectible : MonoBehaviour
             meshRenderer = GetComponent<MeshRenderer>();
             initialScale = transform.localScale;
             initialColor = meshRenderer.material.color;
+            audioSource = GetComponent<AudioSource>();
+            if (audioSource == null)
+            {
+                audioSource = gameObject.AddComponent<AudioSource>();
+            }
         }
     }
 
@@ -31,6 +39,10 @@ public class Collectible : MonoBehaviour
     {
         if (isCollectibe && other.CompareTag("Player"))
         {
+            if (collectSound != null)
+            {
+                audioSource.PlayOneShot(collectSound, soundVolumeScale);
+            }
             if (GameManager.Instance.selectedCollectible == CollectibleState.HasCollectible)
             {
                 GameManager.Instance.collectedCount++;

@@ -3,6 +3,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(Collider))]
 [RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(AudioSource))]
 public class DescendingBlock : MechanismBase
 {
     [Header("下降参数")]
@@ -13,21 +14,25 @@ public class DescendingBlock : MechanismBase
     [Tooltip("延迟多少秒后开始执行Active或Deactive操作")]
     public float actionDelay = 0f;
 
+    [Header("音效设置")]
+    public AudioClip moveSound;
+    public float soundVolume = 1f;
+
     private Vector3 initialPosition;
     private int currentStep = 0; // 当前下降的格数
 
     private Coroutine movementCoroutine;
-
     public Vector3 CurrentVelocity { get; private set; }
     private Vector3 lastPosition;
-
     private Rigidbody rb;
+    private AudioSource audioSource;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
         rb.isKinematic = true;
         rb.interpolation = RigidbodyInterpolation.Interpolate;
+        audioSource = GetComponent<AudioSource>();
     }
 
     private void Start()
@@ -72,6 +77,13 @@ public class DescendingBlock : MechanismBase
         {
             StopCoroutine(movementCoroutine);
         }
+        if (moveSound != null)
+        {
+            audioSource.clip = moveSound;
+            audioSource.loop = true;
+            audioSource.volume = soundVolume;
+            audioSource.Play();
+        }
         movementCoroutine = StartCoroutine(MoveToPosition(targetPosition, descendSpeed));
     }
 
@@ -86,6 +98,13 @@ public class DescendingBlock : MechanismBase
         {
             StopCoroutine(movementCoroutine);
         }
+        if (moveSound != null)
+        {
+            audioSource.clip = moveSound;
+            audioSource.loop = true;
+            audioSource.volume = soundVolume;
+            audioSource.Play();
+        }
         movementCoroutine = StartCoroutine(MoveToPosition(targetPosition, descendSpeed));
     }
 
@@ -98,5 +117,9 @@ public class DescendingBlock : MechanismBase
             yield return new WaitForFixedUpdate();
         }
         rb.MovePosition(targetPos);
+        if (audioSource.isPlaying)
+        {
+            audioSource.Stop();
+        }
     }
 }
