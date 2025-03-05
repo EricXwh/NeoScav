@@ -25,7 +25,6 @@ public class Bullet : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        Debug.Log(other.gameObject);
         if (other.CompareTag("Player"))
         {
             LevelManager.Instance.ResetCurrentLevel();

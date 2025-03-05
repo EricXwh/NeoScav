@@ -46,6 +46,7 @@ public class Collectible : MonoBehaviour
             if (GameManager.Instance.selectedCollectible == CollectibleState.HasCollectible)
             {
                 GameManager.Instance.collectedCount++;
+                LevelManager.Instance.AddCollectibleToCurrentLevel();
             }
             StartCoroutine(AnimateAndDestroy());
         }
