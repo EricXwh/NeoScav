@@ -8,8 +8,7 @@ Visit [NeoScav on itch.io](https://eric-xwh.itch.io/neoscav) for more details or
 1. [Game Overview](#game-overview)
 2. [Gameplay & Mechanics](#gameplay--mechanics)
 3. [Game Versions](#game-versions)
-4. [Level Design Philosophy](#level-design-philosophy)
-5. [Controls](#controls)
+4. [Controls](#controls)
 
 ---
 
