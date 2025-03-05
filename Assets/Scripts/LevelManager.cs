@@ -8,6 +8,7 @@ using TMPro;
 using System.IO;
 using System.Text;
 using System;
+using UnityEngine.Analytics;
 
 public class LevelManager : MonoBehaviour
 {
@@ -183,9 +184,12 @@ public class LevelManager : MonoBehaviour
     /// 复原当前关卡：按 R 键时，记录重置次数，然后重载当前 Scene
     public void ResetCurrentLevel()
     {
-        // 增加当前关卡的重置次数
+        if (GameManager.Instance.selectedCollectible == CollectibleState.HasCollectible)
+        {
+            GameManager.Instance.collectedCount -= levelStats[currentLevelIndex].collectibleCount;
+            levelStats[currentLevelIndex].collectibleCount = 0;
+        }
         levelStats[currentLevelIndex].resetCount++;
-        // 重新加载整个 Scene
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
@@ -290,10 +294,28 @@ public class LevelManager : MonoBehaviour
                 i + 1,
                 levelStats[i].resetCount,
                 levelStats[i].finalTime);
+            
+            // 在 WebGL 平台上传数据
+            //#if UNITY_WEBGL && !UNITY_EDITOR
+            Analytics.CustomEvent("level_summary", new Dictionary<string, object>
+            {
+                { "level", i + 1 },
+                { "resetCount", levelStats[i].resetCount },
+                { "time", levelStats[i].finalTime }
+            });
+            Debug.Log("关卡数据上传完成！");
+            //#endif
         }
+
         if (GameManager.Instance != null && GameManager.Instance.selectedCollectible == CollectibleState.HasCollectible)
         {
             summary += "\nCollectible Count: " + GameManager.Instance.collectedCount;
+            //#if UNITY_WEBGL && !UNITY_EDITOR
+            Analytics.CustomEvent("collectible_summary", new Dictionary<string, object>
+            {
+                { "collectibleCount", GameManager.Instance.collectedCount }
+            });
+            //#endif
         }
         Debug.Log(summary);
 
@@ -305,19 +327,24 @@ public class LevelManager : MonoBehaviour
                 summaryText.text = summary;
             }
         }
+
+        // 在本地平台导出 CSV
+        //#if !UNITY_WEBGL || UNITY_EDITOR
+        //generateCSVFile();
+        //#endif
     }
 
     public void generateCSVFile()
     {
         string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        string filePath = Path.Combine(Application.persistentDataPath, "summary_"+ timestamp+".csv");
+        string filePath = Path.Combine(Application.persistentDataPath, "summary_" + timestamp + ".csv");
         StringBuilder csvContent = new StringBuilder();
         csvContent.AppendLine("Level, ResetCount, Time");
 
-        for(int i = 0; i < levelStats.Length; i++)
+        for (int i = 0; i < levelStats.Length; i++)
         {
-            csvContent.AppendLine(string.Format("{0},{1},{2:F2}", 
-                i + 1, 
+            csvContent.AppendLine(string.Format("{0},{1},{2:F2}",
+                i + 1,
                 levelStats[i].resetCount,
                 levelStats[i].finalTime));
         }
@@ -335,11 +362,16 @@ public class LevelManager : MonoBehaviour
 
     public void ExitGame()
     {
-    #if UNITY_EDITOR
-        UnityEditor.EditorApplication.isPlaying = false;
-    #else
-        Application.Quit();
-    #endif
+        #if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+        #else
+            Application.Quit();
+        #endif
+    }
+
+    public void AddCollectibleToCurrentLevel()
+    {
+        levelStats[currentLevelIndex].collectibleCount++;
     }
 }
 
@@ -347,4 +379,5 @@ public class LevelManager : MonoBehaviour
 public class LevelStatistics {
     public int resetCount = 0;
     public float finalTime = 0f;
+    public int collectibleCount = 0;
 }
