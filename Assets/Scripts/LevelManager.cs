@@ -9,6 +9,7 @@ using System.IO;
 using System.Text;
 using System;
 using UnityEngine.Analytics;
+using MaskTransitions;
 
 public class LevelManager : MonoBehaviour
 {
@@ -110,7 +111,7 @@ public class LevelManager : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning("关卡 " + level.name + " 没有找到生成点 (PlayerSpawn)！");
+                Debug.LogWarning("关卡 " + level.name + " 没有找到生成点 (PlayerSpawn)");
             }
         }
     }
@@ -156,7 +157,7 @@ public class LevelManager : MonoBehaviour
         {
             if (tutorialPopup != null)
             {
-                tutorialPopup.ShowPopup(levelData.mechanismTutorialMessage);
+                tutorialPopup.ShowPopup(levelData.tutorialImage);
                 while (!tutorialPopup.IsClosed)
                 {
                     yield return null;
@@ -181,7 +182,7 @@ public class LevelManager : MonoBehaviour
     }
 
 
-    /// 复原当前关卡：按 R 键时，记录重置次数，然后重载当前 Scene
+    //复原当前关卡：按 R 键时，记录重置次数，然后重载当前 Scene
     public void ResetCurrentLevel()
     {
         if (GameManager.Instance.selectedCollectible == CollectibleState.HasCollectible)
@@ -190,13 +191,20 @@ public class LevelManager : MonoBehaviour
             levelStats[currentLevelIndex].collectibleCount = 0;
         }
         levelStats[currentLevelIndex].resetCount++;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        TransitionManager.Instance.LoadLevel(SceneManager.GetActiveScene().name);
     }
 
-    /// 外部调用 NextLevel() 触发关卡切换
+    //外部调用 NextLevel() 触发关卡切换
     public void NextLevel()
     {
-        StartCoroutine(NextLevelCoroutine());
+        StartCoroutine(NextLevelSequence());
+    }
+    
+    private IEnumerator NextLevelSequence()
+    {
+        TransitionManager.Instance.PlayTransition(1.5f);
+        yield return new WaitForSeconds(0.5f);
+        yield return StartCoroutine(NextLevelCoroutine());
     }
 
     private IEnumerator NextLevelCoroutine()
@@ -248,13 +256,13 @@ public class LevelManager : MonoBehaviour
                     }
                     else
                     {
-                        Debug.LogWarning("未能获取 CinemachineVirtualCamera！");
+                        Debug.LogWarning("未能获取Camera");
                     }
                 }
             }
             else
             {
-                Debug.LogWarning("下一关没有找到生成点！");
+                Debug.LogWarning("下一关没有找到生成点");
             }
 
             // 重置本次关卡计时
@@ -267,7 +275,7 @@ public class LevelManager : MonoBehaviour
             {
                 if (tutorialPopup != null)
                 {
-                    tutorialPopup.ShowPopup(levelData.mechanismTutorialMessage);
+                    tutorialPopup.ShowPopup(levelData.tutorialImage);
                     while (!tutorialPopup.IsClosed)
                     {
                         yield return null;
@@ -277,7 +285,7 @@ public class LevelManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("所有关卡完成！");
+            Debug.Log("所有关卡完成");
             // 通关后显示每一关的统计数据
             ShowSummary();
             Time.timeScale = 0;
@@ -372,6 +380,10 @@ public class LevelManager : MonoBehaviour
     public void AddCollectibleToCurrentLevel()
     {
         levelStats[currentLevelIndex].collectibleCount++;
+        if (levelStats[currentLevelIndex].collectibleCount > levelStats[currentLevelIndex].maxCollectibleCount)
+        {
+            levelStats[currentLevelIndex].maxCollectibleCount = levelStats[currentLevelIndex].collectibleCount;
+        }
     }
 }
 
@@ -380,4 +392,5 @@ public class LevelStatistics {
     public int resetCount = 0;
     public float finalTime = 0f;
     public int collectibleCount = 0;
+    public int maxCollectibleCount = 0; 
 }

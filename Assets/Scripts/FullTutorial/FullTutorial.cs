@@ -7,7 +7,7 @@ public class FullTutorial : MonoBehaviour
     // 指向整个弹出页面的根物体（Panel）
     public GameObject popupPanel;
     // 显示介绍文本
-    public TextMeshProUGUI messageText;
+    public Image tutorialImageUI;
     // 关闭按钮
     public Button closeButton;
 
@@ -24,14 +24,15 @@ public class FullTutorial : MonoBehaviour
         }
     }
 
-    /// <summary>
     /// 显示弹出页面，并设置介绍内容
-    /// </summary>
-    public void ShowPopup(string message)
+    public void ShowPopup(Sprite tutorialSprite)
     {
         if (popupPanel != null)
         {
-            messageText.text = message;
+            if (tutorialImageUI != null)
+            {
+                tutorialImageUI.sprite = tutorialSprite;
+            }
             popupPanel.SetActive(true);
             isClosed = false;
             if (playerController != null)
@@ -40,10 +41,7 @@ public class FullTutorial : MonoBehaviour
             }
         }
     }
-
-    /// <summary>
     /// 当玩家点击关闭按钮时调用
-    /// </summary>
     public void OnCloseButtonClicked()
     {
         if (popupPanel != null)
@@ -57,9 +55,7 @@ public class FullTutorial : MonoBehaviour
         }
     }
 
-    /// <summary>
     /// 外部可以查询该属性，判断弹窗是否已关闭
-    /// </summary>
     public bool IsClosed
     {
         get { return isClosed; }

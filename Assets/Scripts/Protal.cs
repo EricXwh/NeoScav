@@ -7,7 +7,12 @@ public class Portal : MonoBehaviour
     // 当玩家进入传送门触发区域时调用
     private void OnTriggerEnter(Collider other)
     {
-        // 检查是否是玩家进入传送门（确保玩家 Tag 为 "Player"）
+        PlayerController pc = other.GetComponent<PlayerController>();
+        if (pc != null && pc.IsCarrying())
+        {
+            pc.StopCarryingAndDestroy();
+            return;
+        }
         if (other.CompareTag("Player"))
         {
             if (levelManager != null)

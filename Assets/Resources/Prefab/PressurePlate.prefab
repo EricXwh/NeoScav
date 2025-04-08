@@ -120,7 +120,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e830acce828a13419fa33658c703b2a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  triggeringTags: []
+  triggeringTags:
+  - Player
+  - Block
+  - Battery
   linkedMechanisms: []
   plateSound: {fileID: 8300000, guid: ae1b5ef955565564e9728fe7686fb275, type: 3}
   soundVolume: 0.4
