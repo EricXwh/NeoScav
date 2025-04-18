@@ -9,6 +9,7 @@ public class PauseMenu : MonoBehaviour
     public TextMeshProUGUI collectibleText;   // 显示收集物数量的文本
     public Transform levelButtonContainer;    // 放置关卡按钮的容器
     public GameObject levelButtonPrefab;      // 关卡按钮预制体
+    public PlayerController playerController;
 
     private bool isPaused = false;
 
@@ -50,12 +51,20 @@ public class PauseMenu : MonoBehaviour
             }
             
             pausePanel.SetActive(true);
-            Time.timeScale = 0;
+            if (playerController != null)
+            {
+                playerController.canMove = false;
+            }
+            //Time.timeScale = 0;
         }
         else
         {
             pausePanel.SetActive(false);
-            Time.timeScale = 1;
+            if (playerController != null)
+            {
+                playerController.canMove = true;
+            }
+            // Time.timeScale = 1;
         }
     }
 
@@ -93,7 +102,11 @@ public class PauseMenu : MonoBehaviour
 
     public void ResumeAndLoadLevel(int levelIndex)
     {
-        Time.timeScale = 1;
+        if (playerController != null)
+        {
+            playerController.canMove = true;
+        }
+        // Time.timeScale = 1;
         LevelManager.savedLevelIndex = levelIndex;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }

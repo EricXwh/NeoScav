@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 
@@ -49,3 +50,4 @@ public class BlockGenerator : EditorWindow
         }
     }
 }
+#endif

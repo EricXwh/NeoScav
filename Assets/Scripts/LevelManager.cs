@@ -197,13 +197,28 @@ public class LevelManager : MonoBehaviour
     //外部调用 NextLevel() 触发关卡切换
     public void NextLevel()
     {
-        StartCoroutine(NextLevelSequence());
+        if (currentLevelIndex >= levels.Length - 1)
+        {
+            levels[currentLevelIndex].SetActive(false);
+            if (playerTransform != null)
+                playerTransform.gameObject.SetActive(false);
+            Debug.Log("所有关卡完成，显示 summary");
+            ShowSummary();
+            Time.timeScale = 0;
+        }
+        else
+        {
+            // 普通关卡切换
+            StartCoroutine(NextLevelSequence());
+        }
     }
     
     private IEnumerator NextLevelSequence()
     {
+        if (currentLevelIndex < levels.Length - 1) {
         TransitionManager.Instance.PlayTransition(1.5f);
         yield return new WaitForSeconds(0.5f);
+        }
         yield return StartCoroutine(NextLevelCoroutine());
     }
 
@@ -221,11 +236,10 @@ public class LevelManager : MonoBehaviour
             levelStats[currentLevelIndex].finalTime = Time.time - levelStartTime;
         }
 
-        currentLevelIndex++;
-        savedLevelIndex = currentLevelIndex;
-
-        if (currentLevelIndex < levels.Length)
-        {
+        // if (currentLevelIndex < levels.Length - 1)
+        // {
+            currentLevelIndex++;
+            savedLevelIndex = currentLevelIndex;
             levelAccumulatedTimes[currentLevelIndex] = 0f;
             GameObject nextLevel = levels[currentLevelIndex];
             nextLevel.SetActive(true);
@@ -282,14 +296,7 @@ public class LevelManager : MonoBehaviour
                     }
                 }
             }
-        }
-        else
-        {
-            Debug.Log("所有关卡完成");
-            // 通关后显示每一关的统计数据
-            ShowSummary();
-            Time.timeScale = 0;
-        }
+        
     }
 
     /// 通关后调用，显示每一关的重置次数和用时

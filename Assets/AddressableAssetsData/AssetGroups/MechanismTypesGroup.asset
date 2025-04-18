@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: MechanismTypesGroup
+  m_EditorClassIdentifier: 
+  m_GroupName: MechanismTypesGroup
+  m_Data:
+    m_SerializedData: []
+  m_GUID: f6cbb9d8e022d714ab3d50bdb4f3ee39
+  m_SerializeEntries:
+  - m_GUID: bd1a3b93192b6d341ba4712bd714e6fe
+    m_Address: Assets/LevelEditor/MechanismType/Portal.asset
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - mechanismType
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3215fd298a709c54cb08b6791b4e689a
+    m_Address: Assets/LevelEditor/MechanismType/PlayerSpawn.asset
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - mechanismType
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4c18f13292cbed54cbf3a0d8e5392e2b
+    m_Address: Assets/LevelEditor/MechanismType/PressurePlate.asset
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - mechanismType
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3c7d7f14df6e21b4d9e49650cbb358e6
+    m_Address: Assets/LevelEditor/MechanismType/DescendingBlock.asset
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - mechanismType
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: ce3941d7b8832b3498ad4f259e93b192, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: f46db63f9d3bf45459b309f2e98b8166, type: 2}
+    - {fileID: 11400000, guid: ab168e5505cea884fa46a294e66ce9d9, type: 2}
