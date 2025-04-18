@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: Default Local Group
+  m_EditorClassIdentifier: 
+  m_GroupName: Default Local Group
+  m_Data:
+    m_SerializedData: []
+  m_GUID: eafeafae64546e643adb3d5cc89c253b
+  m_SerializeEntries:
+  - m_GUID: 200502958bee1df4f8378ed03c488083
+    m_Address: Assets/Res/Prefab/Portal.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 1390daebbfa45204cb64568e2571d458
+    m_Address: Assets/Res/Prefab/PlayerSpawn.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 799592a8be9886740ac1c1dd99f88a02
+    m_Address: Assets/Res/Prefab/PressurePlate.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: aa7dbabdc32ce774bafa36f3535d482a
+    m_Address: Assets/Res/Prefab/Gate.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: ce3941d7b8832b3498ad4f259e93b192, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 98be0edb960bb7945a9013c9d7109930, type: 2}
+    - {fileID: 11400000, guid: 8d31090a0da31b74bb9ead490d90d2f1, type: 2}

@@ -9,18 +9,24 @@ public class PauseMenu : MonoBehaviour
     public TextMeshProUGUI collectibleText;   // 显示收集物数量的文本
     public Transform levelButtonContainer;    // 放置关卡按钮的容器
     public GameObject levelButtonPrefab;      // 关卡按钮预制体
+    public PlayerController playerController;
 
     private bool isPaused = false;
 
     void Start()
     {
-        // 开始时关闭暂停菜单
         if (pausePanel != null)
             pausePanel.SetActive(false);
     }
 
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.G))
+        {
+            LevelManager.savedLevelIndex = LevelManager.Instance.levels.Length - 1;
+            BuildLevelButtons();
+        }
+
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             TogglePause();
@@ -33,7 +39,6 @@ public class PauseMenu : MonoBehaviour
         isPaused = !isPaused;
         if (isPaused)
         {
-            // 在激活面板前先生成按钮并更新 UI
             BuildLevelButtons();
 
             if (GameManager.Instance.selectedCollectible == CollectibleState.HasCollectible)
@@ -45,28 +50,32 @@ public class PauseMenu : MonoBehaviour
                 collectibleText.text = "";
             }
             
-            // 然后再激活暂停面板，并暂停游戏
             pausePanel.SetActive(true);
-            Time.timeScale = 0;
+            if (playerController != null)
+            {
+                playerController.canMove = false;
+            }
+            //Time.timeScale = 0;
         }
         else
         {
             pausePanel.SetActive(false);
-            Time.timeScale = 1;
+            if (playerController != null)
+            {
+                playerController.canMove = true;
+            }
+            // Time.timeScale = 1;
         }
     }
 
 
-    // 构建关卡选择按钮，只允许当前及已通关关卡可选
     private void BuildLevelButtons()
     {
-        // 清除容器中原有按钮
         foreach (Transform child in levelButtonContainer)
         {
             Destroy(child.gameObject);
         }
 
-        // 遍历所有关卡，让所有关卡按钮都生成出来
         for (int i = 0; i < LevelManager.Instance.levels.Length; i++)
         {
             GameObject btnObj = Instantiate(levelButtonPrefab, levelButtonContainer);
@@ -91,12 +100,13 @@ public class PauseMenu : MonoBehaviour
         }
     }
 
-    // 选择关卡后恢复游戏并加载指定关卡
     public void ResumeAndLoadLevel(int levelIndex)
     {
-        Time.timeScale = 1;
-        // 如果你希望用 LevelManager 来管理关卡切换，这里可以调用 LevelManager 的方法，
-        // 或者直接加载当前场景并更新 LevelManager.savedLevelIndex
+        if (playerController != null)
+        {
+            playerController.canMove = true;
+        }
+        // Time.timeScale = 1;
         LevelManager.savedLevelIndex = levelIndex;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }

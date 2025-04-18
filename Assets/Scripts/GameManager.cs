@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using MaskTransitions;
 
 public enum CollectibleState
 {
@@ -31,6 +32,7 @@ public class GameManager : MonoBehaviour
     {
         selectedCollectible = (CollectibleState)option;
         Debug.Log("Selected Collectible Option: " + selectedCollectible);
-        SceneManager.LoadScene("MainGame");
+        TransitionManager.Instance.LoadLevel("MainGame");
+        //SceneManager.LoadScene("MainGame");
     }
 }
