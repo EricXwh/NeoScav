@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
+using TMPro;
 
 public class EditorCameraController : MonoBehaviour
 {
@@ -21,6 +23,14 @@ public class EditorCameraController : MonoBehaviour
 
     void Update()
     {
+        var es = EventSystem.current;
+        if (es != null && 
+            es.currentSelectedGameObject != null && 
+            es.currentSelectedGameObject.GetComponent<TMP_InputField>() != null)
+        {
+            return;
+        }
+
         float h = Input.GetAxisRaw("Horizontal"); 
         float v = Input.GetAxisRaw("Vertical");  
         
@@ -43,7 +53,11 @@ public class EditorCameraController : MonoBehaviour
             transform.eulerAngles = new Vector3(pitch, yaw, 0);
         }
 
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        transform.position += transform.forward * scroll * zoomSpeed;
+        float scroll = 0f;
+        if (!DisableCameraScrollOnHover.IsPointerOverScroll)
+        {
+            scroll = Input.GetAxis("Mouse ScrollWheel");
+            transform.position += transform.forward * scroll * zoomSpeed;
+        }
     }
 }

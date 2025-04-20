@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 552074990ff5b1940905d5f52ae9ea7a, type: 3}
-  m_Name: Portal
+  m_Name: BouncePlate
   m_EditorClassIdentifier: 
-  displayName: Portal
-  icon: {fileID: 21300014, guid: 1eaee135ce037439d925cee5e41ce026, type: 3}
+  displayName: BoucePlate
+  icon: {fileID: 0}
   prefabReference:
-    m_AssetGUID: 200502958bee1df4f8378ed03c488083
+    m_AssetGUID: 255a44f78e4941e4b8adc7533695c92c
     m_SubObjectName: 
     m_SubObjectType: 
     m_EditorAssetChanged: 0
-  allowOnlyOne: 1
+  allowOnlyOne: 0

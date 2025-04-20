@@ -15,7 +15,8 @@ MonoBehaviour:
   displayName: PlayerSpawn
   icon: {fileID: 0}
   prefabReference:
-    m_AssetGUID: 1390daebbfa45204cb64568e2571d458
+    m_AssetGUID: 7108dba1c2a0d0142882372f180e694e
     m_SubObjectName: 
     m_SubObjectType: 
     m_EditorAssetChanged: 0
+  allowOnlyOne: 1

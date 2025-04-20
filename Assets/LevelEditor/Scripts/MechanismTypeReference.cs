@@ -9,4 +9,7 @@ public class MechanismTypeReference : MonoBehaviour
 {
     [Tooltip("本实例所基于的 Addressable Prefab")]
     public AssetReferenceGameObject prefabReference;
+
+    [HideInInspector]
+    public int instanceId;
 }
