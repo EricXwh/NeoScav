@@ -65,6 +65,18 @@ MonoBehaviour:
     m_SerializedLabels:
     - mechanismType
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0613869a6a4a0384da1467e213b2a0af
+    m_Address: Assets/LevelEditor/MechanismType/FloorTile.asset
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - mechanismType
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7a8c3e6bf0d006446b155486e698e5bd
+    m_Address: Assets/LevelEditor/MechanismType/FloorBlock.asset
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - mechanismType
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: ce3941d7b8832b3498ad4f259e93b192, type: 2}
   m_SchemaSet:

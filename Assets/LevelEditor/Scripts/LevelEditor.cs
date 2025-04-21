@@ -5,6 +5,7 @@ using UnityEngine.EventSystems;
 using System.Collections.Generic;
 using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.AddressableAssets;
+using MaskTransitions;
 
 public class LevelEditor : MonoBehaviour
 {
@@ -92,16 +93,43 @@ public class LevelEditor : MonoBehaviour
     private void HandlePlacement()
     {
         if (IsPointerOverBlockedUI()) return;
-
         if (!Input.GetMouseButtonDown(0)) return;
         if (placingType == null) return;
 
+        float grid = 2f;
         var type      = placingType;
         var prefabRef = type.prefabReference;
-        var baseName  = type.displayName;
-        placingType = null;
-        var groundPoint = hitPoint();
-        var spawnPos    = groundPoint + Vector3.up * 0.5f;
+        placingType   = null;
+
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Vector3 spawnPos;
+
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f, groundLayer))
+        {
+            Vector3 raw = hit.point + Vector3.up * 0.5f;
+            spawnPos = new Vector3(
+                Mathf.Round(raw.x / grid) * grid,
+                raw.y,
+                Mathf.Round(raw.z / grid) * grid
+            );
+        }
+        else
+        {
+            Plane plane = new Plane(Vector3.up, Vector3.zero);
+            if (plane.Raycast(ray, out float enter))
+            {
+                Vector3 raw = ray.GetPoint(enter) + Vector3.up * 0.5f;
+                spawnPos = new Vector3(
+                    Mathf.Round(raw.x / grid) * grid,
+                    raw.y,
+                    Mathf.Round(raw.z / grid) * grid
+                );
+            }
+            else
+            {
+                return;
+            }
+        }
 
         AsyncOperationHandle<GameObject> handle =
             prefabRef.InstantiateAsync(
@@ -113,21 +141,17 @@ public class LevelEditor : MonoBehaviour
         handle.Completed += op =>
         {
             GameObject go = op.Result;
-
-            var mtr = go.GetComponent<MechanismTypeReference>();
-            if (mtr == null) mtr = go.AddComponent<MechanismTypeReference>();
+            var mtr = go.GetComponent<MechanismTypeReference>()
+                    ?? go.AddComponent<MechanismTypeReference>();
             mtr.prefabReference = prefabRef;
+            mtr.instanceId      = nextInstanceId++;
 
-            mtr.instanceId = nextInstanceId++;
-
-            if (!nameCounters.ContainsKey(baseName))
-            nameCounters[baseName] = 0;
-            nameCounters[baseName]++;
-            int displayIndex = nameCounters[baseName];
-
+            if (!nameCounters.ContainsKey(type.displayName))
+                nameCounters[type.displayName] = 0;
+            int displayIndex = ++nameCounters[type.displayName];
             go.name = type.allowOnlyOne
-            ? type.displayName
-            : $"{type.displayName}_{displayIndex}";
+                ? type.displayName
+                : $"{type.displayName}_{displayIndex}";
 
             if (go.GetComponent<Selectable>() == null)
                 go.AddComponent<Selectable>();
@@ -218,5 +242,27 @@ public class LevelEditor : MonoBehaviour
             nameCounters[baseName] = 0;
         nameCounters[baseName]++;
         return nameCounters[baseName];
+    }
+
+    public void ClearSelected()
+    {
+        if (selected != null)
+        {
+            Destroy(selected);
+            SelectObject(null);
+        }
+    }
+
+    public void ClearAll()
+    {
+        foreach (var child in placementRoot.Cast<Transform>().ToArray())
+            Destroy(child.gameObject);
+
+        SelectObject(null);
+    }
+
+    public void BackMenu()
+    {
+        TransitionManager.Instance.LoadLevel("InitialScene");
     }
 }

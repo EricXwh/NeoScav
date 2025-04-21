@@ -34,11 +34,11 @@ public class InspectorPanel : MonoBehaviour
     private GameObject current;
     private ILinkable currentLinkable;
 
+
     void Start()
     {
         LevelEditor.Instance.OnSelectionChanged += OnSelectionChanged;
 
-        // 填充完 TextField 之后立即应用变换
         posXInput.onEndEdit.AddListener(_ => ApplyAll());
         posYInput.onEndEdit.AddListener(_ => ApplyAll());
         posZInput.onEndEdit.AddListener(_ => ApplyAll());
@@ -48,6 +48,7 @@ public class InspectorPanel : MonoBehaviour
         scaleXInput.onEndEdit.AddListener(_ => ApplyAll());
         scaleYInput.onEndEdit.AddListener(_ => ApplyAll());
         scaleZInput.onEndEdit.AddListener(_ => ApplyAll());
+        gameObject.SetActive(false);
     }
 
     private void OnSelectionChanged(GameObject go)
@@ -82,7 +83,6 @@ public class InspectorPanel : MonoBehaviour
         linksContainer.SetActive(currentLinkable != null);
         if (currentLinkable != null)
         {
-            // 刷新两部分列表
             RefreshCandidates();
             RefreshLinks();
         }
@@ -112,15 +112,12 @@ public class InspectorPanel : MonoBehaviour
 
     private void RefreshCandidates()
     {
-        // 只在 Linkable 对象上显示
         bool linkable = currentLinkable != null;
         candidatesContent.parent.gameObject.SetActive(linkable);
         if (!linkable) return;
 
-        // 清空旧候选
         foreach (Transform c in candidatesContent) Destroy(c.gameObject);
 
-        // 场景里所有 MechanismBase
         var all = FindObjectsOfType<MechanismBase>();
         // 排除自己、也排除已经链接过的
         var linked = currentLinkable.LinkedMechanisms ?? new MechanismBase[0];
@@ -144,19 +141,16 @@ public class InspectorPanel : MonoBehaviour
         newArr[arr.Length] = mech;
         currentLinkable.LinkedMechanisms = newArr;
 
-        // 立即刷新两侧列表
         RefreshCandidates();
         RefreshLinks();
     }
 
     private void RefreshLinks()
     {
-        // 只在 Linkable 对象上显示
         bool linkable = currentLinkable != null;
         linksContent.parent.gameObject.SetActive(linkable);
         if (!linkable) return;
 
-        // 清空旧链接
         foreach (Transform c in linksContent) Destroy(c.gameObject);
 
         // 遍历并展示
@@ -169,10 +163,6 @@ public class InspectorPanel : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 扫描所有 MonoBehaviour 脚本，找出可序列化字段，动态生成 PropertyItem
-    /// 返回：是否找到了至少一个字段
-    /// </summary>
     private bool RefreshProperties(GameObject go)
     {
         // 清空旧项
@@ -180,7 +170,7 @@ public class InspectorPanel : MonoBehaviour
             Destroy(c.gameObject);
 
         bool found = false;
-        // 遍历所有脚本组件（排除 Transform、Selectable、InspectorPanel 本身等）
+        // 遍历所有脚本组件
         var comps = go.GetComponents<MonoBehaviour>();
         foreach (var comp in comps)
         {
@@ -189,14 +179,12 @@ public class InspectorPanel : MonoBehaviour
                 type == typeof(InspectorPanel))
                 continue;
 
-            // 获取 public 字段 或 有 [SerializeField] 标记的私有字段
             var fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             foreach (var f in fields)
             {
-                if (!f.IsPublic && f.GetCustomAttribute<SerializeField>() == null)
+                if (!f.IsPublic && f.GetCustomAttribute<SerializeField>() == null || f.GetCustomAttribute<HideInInspector>() != null)
                     continue;
 
-                // 仅支持简单类型：float/int/string
                 if (f.FieldType != typeof(float) &&
                     f.FieldType != typeof(int)   &&
                     f.FieldType != typeof(string))

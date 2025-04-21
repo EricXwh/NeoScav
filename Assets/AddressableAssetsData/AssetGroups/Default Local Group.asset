@@ -57,6 +57,16 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f1323e82b0c924a49b518dd3925d049d
+    m_Address: Assets/Res/Prefab/FloorTile.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b6cc518ed9a816f4191f27edfa26b848
+    m_Address: Assets/Res/AssetsStorePackages/ToyBox/Prefabs/Blocks/BasicBlock/WorkBlock6.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: ce3941d7b8832b3498ad4f259e93b192, type: 2}
   m_SchemaSet:
