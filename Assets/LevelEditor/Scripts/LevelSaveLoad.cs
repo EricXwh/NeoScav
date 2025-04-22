@@ -29,7 +29,6 @@ public class LevelSaveLoad : MonoBehaviour
         {
             GameObject go = mtr.gameObject;
 
-            // 直接用 mtr.instanceId 而不是 ParseId(go.name)
             var pd = new PlacedItemData {
                 id = mtr.instanceId,
                 mechanismTypeAddress = mtr.prefabReference.RuntimeKey.ToString(),
@@ -78,21 +77,17 @@ public class LevelSaveLoad : MonoBehaviour
             {
                 GameObject go = Instantiate(op.Result, placementRoot);
 
-                // 先恢复 Transform
                 go.transform.position    = pd.position;
                 go.transform.eulerAngles  = pd.rotation;
                 go.transform.localScale   = pd.scale;
 
-                // 添加 Selectable
                 if (go.GetComponent<Selectable>() == null)
                     go.AddComponent<Selectable>();
 
-                // 恢复 MechanismTypeReference + instanceId
                 var mtr = go.AddComponent<MechanismTypeReference>();
                 mtr.prefabReference = new AssetReferenceGameObject(pd.mechanismTypeAddress);
                 mtr.instanceId      = pd.id;
 
-                // 用 instanceId 给物体命名（可选）
                 go.name = $"{op.Result.name}_{pd.id}";
 
                 idMap[pd.id]       = go;
@@ -150,14 +145,14 @@ public class LevelSaveLoad : MonoBehaviour
         Debug.Log("Load complete");
     }
 
-    // 辅助：解析 id
+    // 解析 id
     private int ParseId(string name)
     {
         var ss=name.Split('_');
         return (ss.Length>1 && int.TryParse(ss.Last(),out var x))? x : name.GetHashCode();
     }
 
-    // 辅助：收集属性
+    // 收集属性
     private List<PropertyData> CollectProperties(GameObject go)
     {
         var list=new List<PropertyData>();
@@ -183,7 +178,6 @@ public class LevelSaveLoad : MonoBehaviour
         return list;
     }
 
-    /// <summary>获取所有存档名（不带后缀）</summary>
     public string[] GetSavedLevelNames()
     {
         string dir = Path.Combine(Application.persistentDataPath, saveFolder);

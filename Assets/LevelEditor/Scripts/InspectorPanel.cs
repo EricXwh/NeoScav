@@ -153,7 +153,6 @@ public class InspectorPanel : MonoBehaviour
 
         foreach (Transform c in linksContent) Destroy(c.gameObject);
 
-        // 遍历并展示
         foreach (var mech in currentLinkable.LinkedMechanisms ?? new MechanismBase[0])
         {
             var go = Instantiate(linkItemTemplate, linksContent);
@@ -165,12 +164,10 @@ public class InspectorPanel : MonoBehaviour
 
     private bool RefreshProperties(GameObject go)
     {
-        // 清空旧项
         foreach (Transform c in propertiesContent)
             Destroy(c.gameObject);
 
         bool found = false;
-        // 遍历所有脚本组件
         var comps = go.GetComponents<MonoBehaviour>();
         foreach (var comp in comps)
         {

@@ -18,7 +18,6 @@ public class DragNumericLabel : MonoBehaviour,
     {
         isDragging = true;
         lastMousePos = eventData.position;
-        // 当开始拖拽时也把标签高亮一下（可选）
         GetComponent<TMP_Text>().color = Color.yellow;
     }
 
@@ -46,7 +45,6 @@ public class DragNumericLabel : MonoBehaviour,
     public void OnPointerUp(PointerEventData eventData)
     {
         isDragging = false;
-        // 恢复标签颜色（可选）
         GetComponent<TMP_Text>().color = Color.white;
     }
 }

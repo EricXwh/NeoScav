@@ -12,7 +12,6 @@ public class PropertyItem : MonoBehaviour
     private object      targetComponent;
     private FieldInfo   field;
 
-    // 用反射把 targetComponent.field 绑定到这个 UI 上
     public void Setup(object comp, FieldInfo fi)
     {
         targetComponent = comp;

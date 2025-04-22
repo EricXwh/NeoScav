@@ -7,7 +7,7 @@ public class MechanismType : ScriptableObject {
     public string displayName; 
     public Sprite icon; 
 
-    [Header("运行时实例化 (Addressable)")]
+    [Header("运行时实例化")]
     public AssetReferenceGameObject prefabReference;
 
     [Tooltip("如果勾选，编辑器每关只允许放置一个此类型实例")]

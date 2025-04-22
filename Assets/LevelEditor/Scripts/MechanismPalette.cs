@@ -6,8 +6,8 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 public class MechanismPalette : MonoBehaviour
 {
     [Header("UI 预制件 & 容器")]
-    public GameObject paletteItemPrefab;   // 拖入 PaletteItem.prefab
-    public Transform contentRoot;          // 拖入 ScrollView/Viewport/Content
+    public GameObject paletteItemPrefab;
+    public Transform contentRoot; 
 
     // 持有加载句柄，用于释放
     private AsyncOperationHandle<IList<MechanismType>> loadHandle;
