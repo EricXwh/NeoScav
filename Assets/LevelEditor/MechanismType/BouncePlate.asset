@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BouncePlate
   m_EditorClassIdentifier: 
   displayName: BoucePlate
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 8c15ca0bf07d6ba43bb3d7d1cfa57018, type: 3}
   prefabReference:
     m_AssetGUID: 255a44f78e4941e4b8adc7533695c92c
     m_SubObjectName: 

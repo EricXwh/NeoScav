@@ -92,73 +92,81 @@ public class LevelEditor : MonoBehaviour
 
     private void HandlePlacement()
     {
-        if (IsPointerOverBlockedUI()) return;
-        if (!Input.GetMouseButtonDown(0)) return;
-        if (placingType == null) return;
+        if (IsPointerOverBlockedUI() || !Input.GetMouseButtonDown(0) || placingType == null) return;
 
         float grid = 2f;
-        var type      = placingType;
+        var type = placingType;
         var prefabRef = type.prefabReference;
-        placingType   = null;
+        placingType  = null;
 
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         Vector3 spawnPos;
+        bool isFloor = type.displayName == "FloorTile";
 
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f, groundLayer))
+        if (isFloor)
         {
-            Vector3 raw = hit.point + Vector3.up * 0.5f;
-            spawnPos = new Vector3(
-                Mathf.Round(raw.x / grid) * grid,
-                raw.y,
-                Mathf.Round(raw.z / grid) * grid
-            );
+            Plane p = new Plane(Vector3.up, Vector3.zero);
+            if (!p.Raycast(ray, out float enter)) return;
+            spawnPos = p.Raycast(ray, out enter)
+                    ? ray.GetPoint(enter)
+                    : Vector3.zero;
         }
         else
         {
-            Plane plane = new Plane(Vector3.up, Vector3.zero);
-            if (plane.Raycast(ray, out float enter))
-            {
-                Vector3 raw = ray.GetPoint(enter) + Vector3.up * 0.5f;
-                spawnPos = new Vector3(
-                    Mathf.Round(raw.x / grid) * grid,
-                    raw.y,
-                    Mathf.Round(raw.z / grid) * grid
-                );
-            }
-            else
-            {
+            if (!Physics.Raycast(ray, out RaycastHit hit, 100f, groundLayer))
                 return;
+
+            spawnPos = hit.point;
+        }
+
+        spawnPos = new Vector3(
+            Mathf.Round(spawnPos.x / grid) * grid,
+            spawnPos.y,
+            Mathf.Round(spawnPos.z / grid) * grid
+        );
+
+        prefabRef.InstantiateAsync(spawnPos, Quaternion.identity, placementRoot)
+        .Completed += op =>
+    {
+        GameObject go = op.Result;
+
+        float halfH = 0f;
+        if (!isFloor)
+        {
+            var rends = go.GetComponentsInChildren<Renderer>();
+            if (rends.Length > 0)
+            {
+                Bounds b = rends[0].bounds;
+                for (int i = 1; i < rends.Length; i++)
+                    b.Encapsulate(rends[i].bounds);
+                halfH = b.extents.y;
             }
         }
 
-        AsyncOperationHandle<GameObject> handle =
-            prefabRef.InstantiateAsync(
-                position: spawnPos,
-                rotation: Quaternion.identity,
-                parent:   placementRoot
-            );
-
-        handle.Completed += op =>
+        if (!isFloor)
         {
-            GameObject go = op.Result;
-            var mtr = go.GetComponent<MechanismTypeReference>()
-                    ?? go.AddComponent<MechanismTypeReference>();
-            mtr.prefabReference = prefabRef;
-            mtr.instanceId      = nextInstanceId++;
+            var pos = go.transform.position;
+            pos.y += halfH;
+            go.transform.position = pos;
+        }
 
-            if (!nameCounters.ContainsKey(type.displayName))
-                nameCounters[type.displayName] = 0;
-            int displayIndex = ++nameCounters[type.displayName];
-            go.name = type.allowOnlyOne
-                ? type.displayName
-                : $"{type.displayName}_{displayIndex}";
+        var mtr = go.GetComponent<MechanismTypeReference>()
+               ?? go.AddComponent<MechanismTypeReference>();
+        mtr.prefabReference = prefabRef;
+        mtr.instanceId      = AllocateInstanceId();
 
-            if (go.GetComponent<Selectable>() == null)
-                go.AddComponent<Selectable>();
+        int displayIndex = isFloor || type.allowOnlyOne
+                         ? 0
+                         : AllocateDisplayIndex(type.displayName);
+        go.name = isFloor || type.allowOnlyOne
+               ? type.displayName
+               : $"{type.displayName}_{displayIndex}";
 
-            SelectObject(go);
-        };
-    }
+        if (go.GetComponent<Selectable>() == null)
+            go.AddComponent<Selectable>();
+        SelectObject(go);
+    };
+}
 
     private void TryLinkToAnother()
     {

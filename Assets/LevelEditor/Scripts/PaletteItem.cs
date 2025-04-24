@@ -29,7 +29,7 @@ public class PaletteItem : MonoBehaviour,
 
     public void OnBeginDrag(PointerEventData eventData)
     {
-        DragDropManager.Instance.BeginDrag(type, iconImage.sprite);
+        DragDropManager.Instance.BeginDrag(type);
     }
 
     public void OnDrag(PointerEventData eventData)

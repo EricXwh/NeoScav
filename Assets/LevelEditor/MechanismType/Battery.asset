@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Battery
   m_EditorClassIdentifier: 
   displayName: Battery
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 2055d236882c916408eedcf532d9cca9, type: 3}
   prefabReference:
     m_AssetGUID: 9e4cae60256b6ba4c85fcb8d88a38f44
     m_SubObjectName: 

@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Linq;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
@@ -9,137 +8,216 @@ public class DragDropManager : MonoBehaviour
 {
     public static DragDropManager Instance { get; private set; }
 
-    [Header("拖拽预览")]
-    public Canvas dragCanvas;
-    public Image dragIcon;
-
+    [Header("UI 拦截区块")]
     public RectTransform[] uiBlockRects;
+
+    [Header("地板层 (Floor Tile) LayerMask")]
+    public LayerMask floorLayer;
+
+    [Header("拖拽预览材质")]
+    public Material previewGreen;
+    public Material previewRed;
+
     private MechanismType draggingType;
     private AsyncOperationHandle<GameObject> loadHandle;
+    private GameObject previewObject;
+    private bool previewValid;
+    private float previewHalfHeight = 0.5f;
 
     void Awake()
     {
         Instance = this;
-        dragIcon.gameObject.SetActive(false);
     }
 
-    void Update()
+    public void BeginDrag(MechanismType type)
     {
-        if (dragIcon.gameObject.activeSelf)
+         if (type.allowOnlyOne)
         {
-            Vector2 pos;
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                dragCanvas.transform as RectTransform,
-                Input.mousePosition,
-                null,
-                out pos
-            );
-            dragIcon.rectTransform.anchoredPosition = pos;
-        }
-    }
-
-    public void BeginDrag(MechanismType type, Sprite iconSprite)
-    {
-        if(type.allowOnlyOne)
-        {
+            var myKey = type.prefabReference.RuntimeKey;
             bool exists = LevelEditor.Instance.placementRoot
-            .GetComponentsInChildren<MechanismTypeReference>(true)
-            .Any(mtr => mtr.prefabReference.RuntimeKey.ToString()
-                        == type.prefabReference.RuntimeKey.ToString());
+                .GetComponentsInChildren<MechanismTypeReference>(true)
+                .Any(mtr => mtr.prefabReference != null
+                        && mtr.prefabReference.RuntimeKey.Equals(myKey));
             if (exists)
             {
                 Debug.LogWarning($"本关只允许一个“{type.displayName}”");
                 return;
             }
         }
+
+        if (loadHandle.IsValid())
+            Addressables.Release(loadHandle);
+        if (previewObject != null)
+            Destroy(previewObject);
+
         draggingType = type;
-        dragIcon.sprite = iconSprite;
-        dragIcon.SetNativeSize();
-        dragIcon.color = new Color(1,1,1,0.7f);
-        dragIcon.gameObject.SetActive(true);
+        loadHandle = type.prefabReference.LoadAssetAsync<GameObject>();
+        loadHandle.Completed += OnPreviewLoaded;
+    }
+
+    private void OnPreviewLoaded(AsyncOperationHandle<GameObject> op)
+    {
+        if (op.Status != AsyncOperationStatus.Succeeded || draggingType == null)
+            return;
+        previewObject = Instantiate(op.Result);
+        previewObject.name = draggingType.displayName + "_Preview";
+
+        foreach (var mb in previewObject.GetComponentsInChildren<MonoBehaviour>())
+            Destroy(mb);
+        foreach (var col in previewObject.GetComponentsInChildren<Collider>())
+            Destroy(col);
+            var renderers = previewObject.GetComponentsInChildren<Renderer>();
+        if (renderers.Length > 0)
+        {
+            Bounds b = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+                b.Encapsulate(renderers[i].bounds);
+            previewHalfHeight = b.extents.y;
+        }
+        else
+        {
+            previewHalfHeight = 0.5f;
+        }
+
+        previewValid = true;
+        foreach (var r in previewObject.GetComponentsInChildren<Renderer>())
+            r.material = previewGreen;
+    }
+
+    void Update()
+    {
+        if (previewObject == null || draggingType == null)
+            return;
+
+        if (IsPointerOverBlockedUI())
+        {
+            previewObject.SetActive(false);
+            previewValid = false;
+            return;
+        }
+
+        previewObject.SetActive(true);
+
+        Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        Vector3 targetPos;
+        bool valid = false;
+
+        if (draggingType.displayName == "FloorTile")
+        {
+            Plane p = new Plane(Vector3.up, Vector3.zero);
+            if (p.Raycast(ray, out float enter))
+            {
+                targetPos = ray.GetPoint(enter);
+                valid = true;
+            }
+            else
+            {
+                return;
+            }
+        }
+        else
+        {
+            if (Physics.Raycast(ray, out RaycastHit hit, 100f, floorLayer))
+            {
+                targetPos = hit.point + Vector3.up * previewHalfHeight;
+                valid = true;
+            }
+            else
+            {
+                Plane p = new Plane(Vector3.up, Vector3.zero);
+                if (!p.Raycast(ray, out float enter)) return;
+                targetPos = ray.GetPoint(enter) + Vector3.up * previewHalfHeight;
+            }
+        }
+
+        float grid = 2f;
+        targetPos = new Vector3(
+            Mathf.Round(targetPos.x / grid) * grid,
+            targetPos.y,
+            Mathf.Round(targetPos.z / grid) * grid
+        );
+
+        previewObject.transform.position = targetPos;
+
+        if (valid != previewValid)
+        {
+            var mat = valid ? previewGreen : previewRed;
+            foreach (var r in previewObject.GetComponentsInChildren<Renderer>())
+                r.material = mat;
+            previewValid = valid;
+        }
     }
 
     public void EndDrag()
     {
-        dragIcon.gameObject.SetActive(false);
+        if (previewObject != null)
+            Destroy(previewObject);
 
-        if (draggingType == null)
-            return;
-
-        if (IsPointerOverBlockedUI())
+        if (draggingType == null || !previewValid)
         {
             draggingType = null;
             return;
         }
 
-        float grid = 2f;
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         Vector3 spawnPos;
-
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f, LevelEditor.Instance.groundLayer))
+        if (draggingType.displayName == "Floor Tile")
         {
-            Vector3 raw = hit.point + Vector3.up * 0.5f;
-            spawnPos = new Vector3(
-                Mathf.Round(raw.x / grid) * grid,
-                raw.y,
-                Mathf.Round(raw.z / grid) * grid
-            );
+            Plane p = new Plane(Vector3.up, Vector3.zero);
+            p.Raycast(ray, out float enter);
+            spawnPos = ray.GetPoint(enter);
         }
         else
         {
-            Plane plane = new Plane(Vector3.up, Vector3.zero);
-            if (plane.Raycast(ray, out float enter))
-            {
-                Vector3 raw = ray.GetPoint(enter) + Vector3.up * 0.5f;
-                spawnPos = new Vector3(
-                    Mathf.Round(raw.x / grid) * grid,
-                    raw.y,
-                    Mathf.Round(raw.z / grid) * grid
-                );
-            }
-            else
-            {
-                draggingType = null;
-                return;
-            }
+            Physics.Raycast(ray, out RaycastHit hit, 100f, floorLayer);
+            spawnPos = hit.point + Vector3.up * previewHalfHeight;
         }
-        var type = draggingType;
+        float grid = 2f;
+        spawnPos = new Vector3(
+            Mathf.Round(spawnPos.x / grid) * grid,
+            spawnPos.y,
+            Mathf.Round(spawnPos.z / grid) * grid
+        );
+
+        var type      = draggingType;
         var prefabRef = type.prefabReference;
 
-        // 异步实例化
-        var handle = prefabRef.InstantiateAsync(
-            spawnPos,
-            Quaternion.identity,
-            LevelEditor.Instance.placementRoot
-        );
-        handle.Completed += op =>
+        prefabRef.InstantiateAsync(
+        spawnPos, Quaternion.identity, LevelEditor.Instance.placementRoot
+        ).Completed += handle =>
         {
-            GameObject go = op.Result;
+            GameObject go = handle.Result;
 
             var mtr = go.GetComponent<MechanismTypeReference>()
-                    ?? go.AddComponent<MechanismTypeReference>();
+                ?? go.AddComponent<MechanismTypeReference>();
             mtr.prefabReference = prefabRef;
 
             mtr.instanceId = LevelEditor.Instance.AllocateInstanceId();
-
-            int displayIndex = LevelEditor.Instance.AllocateDisplayIndex(type.displayName);
-
-            go.name = type.allowOnlyOne ? type.displayName : $"{type.displayName}_{displayIndex}";
+            int idx = type.allowOnlyOne
+                ? 0
+                : LevelEditor.Instance.AllocateDisplayIndex(type.displayName);
+            go.name = type.allowOnlyOne
+                ? type.displayName
+                : $"{type.displayName}_{idx}";
 
             if (go.GetComponent<Selectable>() == null)
                 go.AddComponent<Selectable>();
 
             LevelEditor.Instance.SelectObject(go);
         };
-        
+
+        if (loadHandle.IsValid())
+            Addressables.Release(loadHandle);
 
         draggingType = null;
+        previewValid = false;
     }
 
     private bool IsPointerOverBlockedUI()
     {
         foreach (var rect in uiBlockRects)
-            if (RectTransformUtility.RectangleContainsScreenPoint(rect, Input.mousePosition))
+            if (RectTransformUtility.RectangleContainsScreenPoint(
+                    rect, Input.mousePosition))
                 return true;
         return false;
     }

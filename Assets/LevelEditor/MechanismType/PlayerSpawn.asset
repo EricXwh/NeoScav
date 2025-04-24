@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PlayerSpawn
   m_EditorClassIdentifier: 
   displayName: PlayerSpawn
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 0cd6eda2f6238294496819dccec8042b, type: 3}
   prefabReference:
     m_AssetGUID: 7108dba1c2a0d0142882372f180e694e
     m_SubObjectName: 
