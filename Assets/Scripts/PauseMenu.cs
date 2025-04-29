@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using UnityEngine.SceneManagement;
+using MaskTransitions;
 
 public class PauseMenu : MonoBehaviour
 {
@@ -109,5 +110,10 @@ public class PauseMenu : MonoBehaviour
         // Time.timeScale = 1;
         LevelManager.savedLevelIndex = levelIndex;
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void BackMenu()
+    {
+        TransitionManager.Instance.LoadLevel("InitialScene");
     }
 }

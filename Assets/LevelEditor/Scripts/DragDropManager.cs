@@ -1,8 +1,8 @@
 using UnityEngine;
-using System.Linq;
 using UnityEngine.EventSystems;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using System.Linq;
 
 public class DragDropManager : MonoBehaviour
 {
@@ -19,7 +19,7 @@ public class DragDropManager : MonoBehaviour
     public Material previewRed;
 
     private MechanismType draggingType;
-    private AsyncOperationHandle<GameObject> loadHandle;
+    private AsyncOperationHandle<GameObject> previewHandle;
     private GameObject previewObject;
     private bool previewValid;
     private float previewHalfHeight = 0.5f;
@@ -31,13 +31,19 @@ public class DragDropManager : MonoBehaviour
 
     public void BeginDrag(MechanismType type)
     {
-         if (type.allowOnlyOne)
+        if (previewHandle.IsValid())
         {
-            var myKey = type.prefabReference.RuntimeKey;
+            Addressables.ReleaseInstance(previewHandle);
+            previewHandle = default;
+            previewObject = null;
+        }
+
+        if (type.allowOnlyOne)
+        {
+            var key = type.prefabReference.RuntimeKey;
             bool exists = LevelEditor.Instance.placementRoot
                 .GetComponentsInChildren<MechanismTypeReference>(true)
-                .Any(mtr => mtr.prefabReference != null
-                        && mtr.prefabReference.RuntimeKey.Equals(myKey));
+                .Any(mtr => mtr.prefabReference.RuntimeKey.Equals(key));
             if (exists)
             {
                 Debug.LogWarning($"本关只允许一个“{type.displayName}”");
@@ -45,48 +51,42 @@ public class DragDropManager : MonoBehaviour
             }
         }
 
-        if (loadHandle.IsValid())
-            Addressables.Release(loadHandle);
-        if (previewObject != null)
-            Destroy(previewObject);
-
         draggingType = type;
-        loadHandle = type.prefabReference.LoadAssetAsync<GameObject>();
-        loadHandle.Completed += OnPreviewLoaded;
-    }
-
-    private void OnPreviewLoaded(AsyncOperationHandle<GameObject> op)
-    {
-        if (op.Status != AsyncOperationStatus.Succeeded || draggingType == null)
-            return;
-        previewObject = Instantiate(op.Result);
-        previewObject.name = draggingType.displayName + "_Preview";
-
-        foreach (var mb in previewObject.GetComponentsInChildren<MonoBehaviour>())
-            Destroy(mb);
-        foreach (var col in previewObject.GetComponentsInChildren<Collider>())
-            Destroy(col);
-            var renderers = previewObject.GetComponentsInChildren<Renderer>();
-        if (renderers.Length > 0)
+        previewHandle = type.prefabReference.InstantiateAsync(
+            Vector3.zero, Quaternion.identity, parent: null
+        );
+        previewHandle.Completed += op =>
         {
-            Bounds b = renderers[0].bounds;
-            for (int i = 1; i < renderers.Length; i++)
-                b.Encapsulate(renderers[i].bounds);
-            previewHalfHeight = b.extents.y;
-        }
-        else
-        {
-            previewHalfHeight = 0.5f;
-        }
+            if (op.Status != AsyncOperationStatus.Succeeded || draggingType == null)
+                return;
 
-        previewValid = true;
-        foreach (var r in previewObject.GetComponentsInChildren<Renderer>())
-            r.material = previewGreen;
+            previewObject = op.Result;
+            previewObject.name = draggingType.displayName + "_Preview";
+
+            foreach (var mb in previewObject.GetComponentsInChildren<MonoBehaviour>())
+                Destroy(mb);
+            foreach (var col in previewObject.GetComponentsInChildren<Collider>())
+                Destroy(col);
+
+            var rends = previewObject.GetComponentsInChildren<Renderer>();
+            if (rends.Length > 0)
+            {
+                Bounds b = rends[0].bounds;
+                for (int i = 1; i < rends.Length; i++)
+                    b.Encapsulate(rends[i].bounds);
+                previewHalfHeight = b.extents.y;
+            }
+            else previewHalfHeight = 0.5f;
+
+            previewValid = true;
+            foreach (var r in rends)
+                r.material = previewGreen;
+        };
     }
 
     void Update()
     {
-        if (previewObject == null || draggingType == null)
+        if (!previewHandle.IsValid() || draggingType == null || previewObject == null)
             return;
 
         if (IsPointerOverBlockedUI())
@@ -99,8 +99,8 @@ public class DragDropManager : MonoBehaviour
         previewObject.SetActive(true);
 
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-        Vector3 targetPos;
         bool valid = false;
+        Vector3 targetPos;
 
         if (draggingType.displayName == "FloorTile")
         {
@@ -110,10 +110,7 @@ public class DragDropManager : MonoBehaviour
                 targetPos = ray.GetPoint(enter);
                 valid = true;
             }
-            else
-            {
-                return;
-            }
+            else return;
         }
         else
         {
@@ -130,7 +127,7 @@ public class DragDropManager : MonoBehaviour
             }
         }
 
-        float grid = 2f;
+        float grid = 1f;
         targetPos = new Vector3(
             Mathf.Round(targetPos.x / grid) * grid,
             targetPos.y,
@@ -150,8 +147,12 @@ public class DragDropManager : MonoBehaviour
 
     public void EndDrag()
     {
-        if (previewObject != null)
-            Destroy(previewObject);
+        if (previewHandle.IsValid())
+        {
+            Addressables.ReleaseInstance(previewHandle);
+            previewHandle = default;
+            previewObject = null;
+        }
 
         if (draggingType == null || !previewValid)
         {
@@ -161,7 +162,7 @@ public class DragDropManager : MonoBehaviour
 
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         Vector3 spawnPos;
-        if (draggingType.displayName == "Floor Tile")
+        if (draggingType.displayName == "FloorTile")
         {
             Plane p = new Plane(Vector3.up, Vector3.zero);
             p.Raycast(ray, out float enter);
@@ -172,42 +173,36 @@ public class DragDropManager : MonoBehaviour
             Physics.Raycast(ray, out RaycastHit hit, 100f, floorLayer);
             spawnPos = hit.point + Vector3.up * previewHalfHeight;
         }
-        float grid = 2f;
+        float grid = 1f;
         spawnPos = new Vector3(
             Mathf.Round(spawnPos.x / grid) * grid,
             spawnPos.y,
             Mathf.Round(spawnPos.z / grid) * grid
         );
 
-        var type      = draggingType;
-        var prefabRef = type.prefabReference;
-
-        prefabRef.InstantiateAsync(
-        spawnPos, Quaternion.identity, LevelEditor.Instance.placementRoot
-        ).Completed += handle =>
+        var type    = draggingType;
+        var prefab  = type.prefabReference;
+        prefab.InstantiateAsync(spawnPos, Quaternion.identity, LevelEditor.Instance.placementRoot)
+              .Completed += handle =>
         {
-            GameObject go = handle.Result;
-
+            var go = handle.Result;
             var mtr = go.GetComponent<MechanismTypeReference>()
-                ?? go.AddComponent<MechanismTypeReference>();
-            mtr.prefabReference = prefabRef;
+                   ?? go.AddComponent<MechanismTypeReference>();
+            mtr.prefabReference = prefab;
+            mtr.instanceId      = LevelEditor.Instance.AllocateInstanceId();
 
-            mtr.instanceId = LevelEditor.Instance.AllocateInstanceId();
             int idx = type.allowOnlyOne
-                ? 0
-                : LevelEditor.Instance.AllocateDisplayIndex(type.displayName);
+                    ? 0
+                    : LevelEditor.Instance.AllocateDisplayIndex(type.displayName);
             go.name = type.allowOnlyOne
-                ? type.displayName
-                : $"{type.displayName}_{idx}";
+                   ? type.displayName
+                   : $"{type.displayName}_{idx}";
 
             if (go.GetComponent<Selectable>() == null)
                 go.AddComponent<Selectable>();
 
             LevelEditor.Instance.SelectObject(go);
         };
-
-        if (loadHandle.IsValid())
-            Addressables.Release(loadHandle);
 
         draggingType = null;
         previewValid = false;
@@ -216,8 +211,7 @@ public class DragDropManager : MonoBehaviour
     private bool IsPointerOverBlockedUI()
     {
         foreach (var rect in uiBlockRects)
-            if (RectTransformUtility.RectangleContainsScreenPoint(
-                    rect, Input.mousePosition))
+            if (RectTransformUtility.RectangleContainsScreenPoint(rect, Input.mousePosition))
                 return true;
         return false;
     }
