@@ -142,10 +142,8 @@ public class PlayerController : MonoBehaviour
         isCarrying = true;
         currentCarryBlock = block;
         
-        // 搬起时取消高亮
         HighlightBlock(null);
 
-        // 如果该方块挂有 CarryBlock 组件，则隐藏其提示
         CarryBlock carryBlock = block.GetComponent<CarryBlock>();
         if (carryBlock != null)
         {
@@ -164,19 +162,14 @@ public class PlayerController : MonoBehaviour
         originalBlockLayer = block.layer;
         block.layer = LayerMask.NameToLayer("CarriedBlock");
         
-        // 对齐携带物体的一个轴与玩家朝向
         AlignCarryBlockWithPlayer();
-
-        // 计算并存储旋转偏移，用于后续保持一致的旋转
         carryRotationOffset = Quaternion.Inverse(transform.rotation) * currentCarryBlock.transform.rotation;
         controller.height += 1.5f;
         controller.center += new Vector3(0, 0.75f, 0);
         
-        // 切换到搬运状态
         SetState<PlayerCarryingState>();
     }
     
-    // 停止搬运
     public void StopCarrying()
     {
         isCarrying = false;
@@ -184,10 +177,8 @@ public class PlayerController : MonoBehaviour
         {
             float width = GetBlockLength(currentCarryBlock);
             Vector3 desiredPosition;
-            Debug.Log(controller.isGrounded);
             if (controller.isGrounded)
             {
-                // 在地面时，使用 interactionPoint 位置，在前方放置方块
                 desiredPosition = interactionPoint.position 
                     + transform.forward * (1f + width / 2f) 
                     + new Vector3(0, 1f, 0);
@@ -214,16 +205,13 @@ public class PlayerController : MonoBehaviour
             return;
 
         Vector3 origin = interactionPoint.position;
-        // 在 interactionDistance 半径内查找所有符合 blockLayer 的碰撞体
         Collider[] colliders = Physics.OverlapSphere(origin, interactionDistance, blockLayer);
         GameObject closestBlock = null;
         float closestDistance = Mathf.Infinity;
 
         foreach (Collider col in colliders)
         {
-            // 计算从交互点到该方块的方向
             Vector3 directionToBlock = col.transform.position - origin;
-            // 筛选出玩家前方45°以内的
             float angle = Vector3.Angle(transform.forward, directionToBlock);
             if (angle <= 45f)
             {
@@ -285,7 +273,6 @@ public class PlayerController : MonoBehaviour
     // 对齐携带物体与玩家朝向
     private void AlignCarryBlockWithPlayer()
     {
-        // 获取玩家的前方向
         Vector3 playerForward = transform.forward;
 
         // 定义携带物体的四个轴方向
@@ -322,10 +309,8 @@ public class PlayerController : MonoBehaviour
     // 高亮显示可交互方块
     private void HighlightBlock(GameObject block)
     {
-        // 如果两次传入相同的物体，则不重复操作
         if (highlightedBlock == block) return;
 
-        // 如果之前有高亮的物体，则先关闭其 Outline
         if (highlightedBlock != null)
         {
             MyOutline oldOutline = highlightedBlock.GetComponent<MyOutline>();
@@ -335,7 +320,6 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        // 如果传入的物体不为 null，则启用其 Outline
         if (block != null)
         {
             MyOutline newOutline = block.GetComponent<MyOutline>();

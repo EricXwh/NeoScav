@@ -1,29 +1,43 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.EventSystems;
 
-public class PaletteItem : MonoBehaviour
+public class PaletteItem : MonoBehaviour,
+    IBeginDragHandler, IDragHandler, IEndDragHandler, IInitializePotentialDragHandler
 {
-    public Image     iconImage;
-    public TMP_Text  nameLabel;
+    public Image    iconImage;
+    public TMP_Text nameLabel;
 
     private MechanismType type;
 
     public void Setup(MechanismType mechanismType)
     {
         type = mechanismType;
-        iconImage.sprite = type.icon;
-        if (nameLabel != null)
-            nameLabel.text = type.displayName;
+        iconImage.sprite = mechanismType.icon;
+        if (nameLabel) nameLabel.text = mechanismType.displayName;
 
         var btn = GetComponent<Button>();
         btn.onClick.RemoveAllListeners();
-        btn.onClick.AddListener(OnClicked);
+        btn.onClick.AddListener(() => LevelEditor.Instance.BeginPlacing(type));
     }
 
-    private void OnClicked()
+    public void OnInitializePotentialDrag(PointerEventData eventData)
     {
-        // 将整个 MechanismType 传给 LevelEditor
-        LevelEditor.Instance.BeginPlacing(type);
+        eventData.useDragThreshold = false;
+    }
+
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        DragDropManager.Instance.BeginDrag(type);
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+    }
+
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        DragDropManager.Instance.EndDrag();
     }
 }

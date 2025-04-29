@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: PressurePlate
   m_EditorClassIdentifier: 
   displayName: PressurePlate
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 6316f7ac565803e479ea815af1ee5860, type: 3}
   prefabReference:
     m_AssetGUID: 799592a8be9886740ac1c1dd99f88a02
     m_SubObjectName: 
     m_SubObjectType: 
     m_EditorAssetChanged: 0
+  allowOnlyOne: 0

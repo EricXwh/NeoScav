@@ -22,8 +22,8 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 1390daebbfa45204cb64568e2571d458
-    m_Address: Assets/Res/Prefab/PlayerSpawn.prefab
+  - m_GUID: 7108dba1c2a0d0142882372f180e694e
+    m_Address: Assets/Res/Prefab/Mechanics/PlayerSpawn.prefab
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
@@ -34,6 +34,36 @@ MonoBehaviour:
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: aa7dbabdc32ce774bafa36f3535d482a
     m_Address: Assets/Res/Prefab/Gate.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9e4cae60256b6ba4c85fcb8d88a38f44
+    m_Address: Assets/Res/Prefab/Mechanics/Battery.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 255a44f78e4941e4b8adc7533695c92c
+    m_Address: Assets/Res/Prefab/Mechanics/Bounce.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: ba18d9fb5112a3f4db0b87841b2be69f
+    m_Address: Assets/Res/Prefab/Mechanics/NewLockBlock.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 64a9c99be844d2b40a41204213481f1b
+    m_Address: Assets/Res/Prefab/Mechanics/Cannon.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f1323e82b0c924a49b518dd3925d049d
+    m_Address: Assets/Res/Prefab/FloorTile.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: b6cc518ed9a816f4191f27edfa26b848
+    m_Address: Assets/Res/AssetsStorePackages/ToyBox/Prefabs/Blocks/BasicBlock/WorkBlock6.prefab
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

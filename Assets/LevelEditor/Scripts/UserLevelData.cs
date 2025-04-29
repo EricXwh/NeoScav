@@ -20,7 +20,7 @@ public class PlacedItemData
     public Vector3  scale;
     public int[]    linkedIds;
 
-    public List<PropertyData> properties;  // 新增：保存所有可序列化字段
+    public List<PropertyData> properties; 
 }
 
 [Serializable]

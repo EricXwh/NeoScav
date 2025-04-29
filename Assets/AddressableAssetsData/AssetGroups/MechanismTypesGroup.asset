@@ -41,6 +41,42 @@ MonoBehaviour:
     m_SerializedLabels:
     - mechanismType
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e2a88ff5dc658744b8c3fc8f147a04fc
+    m_Address: Assets/LevelEditor/MechanismType/Battery.asset
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - mechanismType
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fd0946e4e91b93b44ac8f79011faa8e3
+    m_Address: Assets/LevelEditor/MechanismType/BouncePlate.asset
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - mechanismType
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 84d1a63fbf7680643b60d0029e2a2ffc
+    m_Address: Assets/LevelEditor/MechanismType/LockBlock.asset
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - mechanismType
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0665b9ee11b1d5242bf95fd15e837225
+    m_Address: Assets/LevelEditor/MechanismType/Cannon.asset
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - mechanismType
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 0613869a6a4a0384da1467e213b2a0af
+    m_Address: Assets/LevelEditor/MechanismType/FloorTile.asset
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - mechanismType
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7a8c3e6bf0d006446b155486e698e5bd
+    m_Address: Assets/LevelEditor/MechanismType/FloorBlock.asset
+    m_ReadOnly: 0
+    m_SerializedLabels:
+    - mechanismType
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: ce3941d7b8832b3498ad4f259e93b192, type: 2}
   m_SchemaSet:

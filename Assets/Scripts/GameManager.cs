@@ -33,6 +33,10 @@ public class GameManager : MonoBehaviour
         selectedCollectible = (CollectibleState)option;
         Debug.Log("Selected Collectible Option: " + selectedCollectible);
         TransitionManager.Instance.LoadLevel("MainGame");
-        //SceneManager.LoadScene("MainGame");
+    }
+
+    public void LevelEditorButton()
+    {
+        TransitionManager.Instance.LoadLevel("LevelEditor");
     }
 }
